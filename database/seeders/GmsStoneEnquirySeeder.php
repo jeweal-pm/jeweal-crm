@@ -33,6 +33,8 @@ class GmsStoneEnquirySeeder extends Seeder
                 'contact_phone' => '+6699558781',
                 'is_seen' => true,
                 'is_approved' => false,
+                'privacy_policy_accepted' => true,
+                'terms_conditions_accepted' => true,
             ],
             [
                 'full_name' => 'Maya Tan',
@@ -57,6 +59,8 @@ class GmsStoneEnquirySeeder extends Seeder
                 'contact_phone' => '+6568123456',
                 'is_seen' => false,
                 'is_approved' => false,
+                'privacy_policy_accepted' => true,
+                'terms_conditions_accepted' => true,
             ],
             [
                 'full_name' => 'Akira Sato',
@@ -81,6 +85,8 @@ class GmsStoneEnquirySeeder extends Seeder
                 'contact_phone' => '+81312345678',
                 'is_seen' => true,
                 'is_approved' => true,
+                'privacy_policy_accepted' => true,
+                'terms_conditions_accepted' => true,
             ],
             [
                 'full_name' => 'Sofia Martinez',
@@ -105,6 +111,8 @@ class GmsStoneEnquirySeeder extends Seeder
                 'contact_phone' => '+34911222333',
                 'is_seen' => false,
                 'is_approved' => false,
+                'privacy_policy_accepted' => true,
+                'terms_conditions_accepted' => false,
             ],
             [
                 'full_name' => 'Daniel Reed',
@@ -129,6 +137,8 @@ class GmsStoneEnquirySeeder extends Seeder
                 'contact_phone' => '+14155550123',
                 'is_seen' => true,
                 'is_approved' => false,
+                'privacy_policy_accepted' => false,
+                'terms_conditions_accepted' => true,
             ],
         ];
 

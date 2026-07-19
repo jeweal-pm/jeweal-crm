@@ -147,7 +147,21 @@
                         <option value="1" @selected((bool) old('is_approved', $enquiry->is_approved))>Approved</option>
                     </select>
                 </div>
-                <div class="form-group col-md-6 d-flex align-items-end justify-content-end">
+                <div class="form-group col-md-3">
+                    <label>Privacy policy</label>
+                    <select name="privacy_policy_accepted" class="form-control">
+                        <option value="0" @selected(! old('privacy_policy_accepted', $enquiry->privacy_policy_accepted))>Not accepted</option>
+                        <option value="1" @selected((bool) old('privacy_policy_accepted', $enquiry->privacy_policy_accepted))>Accepted</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-3">
+                    <label>Terms conditions</label>
+                    <select name="terms_conditions_accepted" class="form-control">
+                        <option value="0" @selected(! old('terms_conditions_accepted', $enquiry->terms_conditions_accepted))>Not accepted</option>
+                        <option value="1" @selected((bool) old('terms_conditions_accepted', $enquiry->terms_conditions_accepted))>Accepted</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-12 d-flex align-items-end justify-content-end">
                     <button class="btn btn-primary" type="submit">
                         <i class="fas fa-save"></i> Save GMS Enquiry
                     </button>

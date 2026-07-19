@@ -201,6 +201,10 @@
                                         {{ $row->is_approved ? 'Approved' : 'Pending' }}
                                     </span>
                                     <div class="crm-muted mt-1">{{ $row->is_seen ? 'Seen' : 'Unseen' }}</div>
+                                    <div class="crm-muted">
+                                        PP: {{ $row->privacy_policy_accepted ? 'Yes' : 'No' }} /
+                                        Terms: {{ $row->terms_conditions_accepted ? 'Yes' : 'No' }}
+                                    </div>
                                 @endif
                             </td>
                             <td>

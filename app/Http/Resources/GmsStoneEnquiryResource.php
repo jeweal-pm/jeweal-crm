@@ -32,6 +32,8 @@ class GmsStoneEnquiryResource extends JsonResource
             'contact_phone' => $this->contact_phone,
             'is_seen' => $this->is_seen,
             'is_approved' => $this->is_approved,
+            'privacy_policy_accepted' => $this->privacy_policy_accepted,
+            'terms_conditions_accepted' => $this->terms_conditions_accepted,
             'assigned_to' => $this->assigned_to,
             'assigned_by' => $this->assigned_by,
             'assigned_at' => $this->assigned_at,

@@ -39,6 +39,8 @@ class GmsStoneEnquiryRequest extends FormRequest
             'contact_phone' => ['nullable', 'string', 'max:50', 'regex:/^[0-9+\-\s().]+$/'],
             'is_seen' => 'sometimes|boolean',
             'is_approved' => 'sometimes|boolean',
+            'privacy_policy_accepted' => 'sometimes|boolean',
+            'terms_conditions_accepted' => 'sometimes|boolean',
         ];
     }
 

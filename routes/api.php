@@ -20,9 +20,9 @@ Route::middleware(['auth:sanctum', 'active'])->get('/user', function (Request $r
     return $request->user();
 });
 
-Route::post('/enquiry', [EnquiriesController::class, 'store'])->middleware('throttle:5,1');
-Route::post('/gis-enquiry', [GisEnquiriesController::class, 'store'])->middleware('throttle:5,1');
-Route::post('/gms-stone-enquiry', [GmsStoneEnquiriesController::class, 'store'])->middleware('throttle:5,1');
+Route::post('/enquiry', [EnquiriesController::class, 'store'])->middleware('ip.rate.limit');
+Route::post('/gis-enquiry', [GisEnquiriesController::class, 'store'])->middleware('ip.rate.limit');
+Route::post('/gms-stone-enquiry', [GmsStoneEnquiriesController::class, 'store'])->middleware('ip.rate.limit');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function () {
     Route::get('/enquiries', [EnquiriesController::class, 'filter'])

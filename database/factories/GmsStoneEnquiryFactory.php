@@ -39,6 +39,8 @@ class GmsStoneEnquiryFactory extends Factory
             'contact_phone' => $this->faker->phoneNumber,
             'is_seen' => false,
             'is_approved' => false,
+            'privacy_policy_accepted' => true,
+            'terms_conditions_accepted' => true,
         ];
     }
 }

@@ -50,6 +50,8 @@
                         'Contact phone' => $enquiry->contact_phone,
                         'Location' => collect([$enquiry->city, $enquiry->province, $enquiry->country, $enquiry->postcode])->filter()->implode(', '),
                         'Seen' => $enquiry->is_seen ? 'Yes' : 'No',
+                        'Privacy policy' => $enquiry->privacy_policy_accepted ? 'Accepted' : 'Not accepted',
+                        'Terms conditions' => $enquiry->terms_conditions_accepted ? 'Accepted' : 'Not accepted',
                     ] as $label => $value)
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
                             <div class="crm-muted">{{ $label }}</div>

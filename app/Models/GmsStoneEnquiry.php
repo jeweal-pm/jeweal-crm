@@ -35,11 +35,15 @@ class GmsStoneEnquiry extends Model
             'contact_phone',
             'is_seen',
             'is_approved',
+            'privacy_policy_accepted',
+            'terms_conditions_accepted',
         ];
 
     protected $casts = [
         'is_seen' => 'boolean',
         'is_approved' => 'boolean',
+        'privacy_policy_accepted' => 'boolean',
+        'terms_conditions_accepted' => 'boolean',
         'assigned_at' => 'datetime',
     ];
 
