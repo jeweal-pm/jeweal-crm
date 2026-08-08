@@ -6,15 +6,19 @@ use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkDeleteEnquiryRequest;
 use App\Http\Requests\EnquiryFilterRequest;
 use App\Http\Requests\EnquiryRequest;
+use App\Http\Requests\EnquiryReplyRequest;
 use App\Http\Requests\UpdateSpamStatusRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Http\Resources\EnquiryResource;
+use App\Mail\EnquiryReply;
 use App\Models\Enquiry;
 use App\Models\User;
 use App\Services\Spam\EnquirySpamScorer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Services\Email\EnquiryEmailAutomationService;
 
 class EnquiriesController extends Controller
 {
@@ -71,6 +75,7 @@ class EnquiriesController extends Controller
         $enquiry = Enquiry::create($request->validated());
         app(EnquirySpamScorer::class)->apply($enquiry);
         $enquiry->recordActivity('created');
+        app(EnquiryEmailAutomationService::class)->dispatchFor($enquiry, 'general');
 
         return response()->json([
             'status' => 'complete',
@@ -206,6 +211,51 @@ class EnquiriesController extends Controller
         ])->save();
 
         return redirect()->back();
+    }
+
+    public function reply(Request $request, int $id)
+    {
+        $enquiry = Enquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        return view('administrator.enquiry.reply', [
+            'enquiry' => $enquiry,
+            'type' => 'enquiry',
+            'backRoute' => route('enquiry.index'),
+            'sendRoute' => route('enquiries.reply.send', $enquiry->id),
+            'recipientName' => $enquiry->name,
+            'recipientEmail' => $enquiry->email,
+            'subtitle' => $enquiry->company ?: 'CRM enquiry',
+            'subject' => 'Re: Your enquiry',
+            'body' => $this->defaultReplyBody($enquiry->name, $request->user()),
+        ]);
+    }
+
+    public function sendReply(EnquiryReplyRequest $request, int $id)
+    {
+        $enquiry = Enquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        $validated = $request->validated();
+
+        Mail::to($enquiry->email, $enquiry->name)
+            ->send(new EnquiryReply(
+                $enquiry,
+                'CRM enquiry',
+                $validated['subject'],
+                $validated['message'],
+                $request->user()
+            ));
+
+        return redirect()
+            ->route('enquiry.index')
+            ->with('status', 'Reply email sent successfully.');
     }
 
     /**
@@ -390,5 +440,14 @@ class EnquiriesController extends Controller
             'suspected_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_SUSPECTED)->count(),
             'confirmed_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CONFIRMED)->count(),
         ];
+    }
+
+    private function defaultReplyBody(string $name, User $user): string
+    {
+        return trim(sprintf(
+            "Dear %s,\n\nThank you for your enquiry. We have received your information and our team will follow up shortly.\n\nBest regards,\n%s",
+            $name,
+            $user->name
+        ));
     }
 }

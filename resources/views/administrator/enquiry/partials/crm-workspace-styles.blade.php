@@ -209,6 +209,29 @@
         font-weight: 700;
     }
 
+    .crm-email-line {
+        align-items: center;
+        display: flex;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .crm-email-line .crm-link {
+        overflow-wrap: anywhere;
+    }
+
+    .crm-reply-link {
+        color: #dc2626;
+        flex: 0 0 auto;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .crm-reply-link:hover {
+        color: #991b1b;
+        text-decoration: none;
+    }
+
     .crm-status {
         border-radius: 999px;
         display: inline-flex;

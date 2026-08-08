@@ -17,6 +17,29 @@
     .gms-enquiry-table .crm-action-form select {
         width: 132px;
     }
+
+    .gms-contact-line {
+        align-items: center;
+        display: flex;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .gms-contact-line .crm-link {
+        overflow-wrap: anywhere;
+    }
+
+    .gms-reply-btn {
+        color: #dc2626;
+        flex: 0 0 auto;
+        font-size: 12px;
+        line-height: 1;
+    }
+
+    .gms-reply-btn:hover {
+        color: #991b1b;
+        text-decoration: none;
+    }
 </style>
 @endsection
 
@@ -75,6 +98,15 @@
                     </select>
                 </div>
                 <div class="form-group col-lg-2 col-md-4">
+                    <label>Status</label>
+                    <select name="status" class="form-control">
+                        <option value="">All statuses</option>
+                        @foreach($statusOptions as $value => $label)
+                            <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="form-group col-lg-2 col-md-4">
                     <label>Seen</label>
                     <select name="is_seen" class="form-control">
                         <option value="">Any</option>
@@ -117,6 +149,7 @@
                         <option value="-created_at" @selected(($filters['sort'] ?? '-created_at') === '-created_at')>Newest first</option>
                         <option value="created_at" @selected(($filters['sort'] ?? '') === 'created_at')>Oldest first</option>
                         <option value="full_name" @selected(($filters['sort'] ?? '') === 'full_name')>Name A-Z</option>
+                        <option value="status" @selected(($filters['sort'] ?? '') === 'status')>Status A-Z</option>
                         <option value="-updated_at" @selected(($filters['sort'] ?? '') === '-updated_at')>Recently updated</option>
                     </select>
                 </div>
@@ -183,7 +216,14 @@
                                 @endif
                             </td>
                             <td>
-                                <div><a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a></div>
+                                <div class="gms-contact-line">
+                                    <a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a>
+                                    @if(! $row->trashed())
+                                        <a class="gms-reply-btn" href="{{ route('gms-enquiries.reply', $row->id) }}" title="Reply email">
+                                            <i class="fas fa-reply"></i>
+                                        </a>
+                                    @endif
+                                </div>
                                 <a href="tel:{{ $row->phone_number }}">{{ $row->phone_number }}</a>
                                 @if($row->contact_name)
                                     <div class="crm-muted">{{ $row->contact_name }}</div>
@@ -197,9 +237,12 @@
                                 @if($row->trashed())
                                     <span class="crm-status crm-status-deleted">Deleted</span>
                                 @else
-                                    <span class="crm-status {{ $row->is_approved ? 'crm-status-customer' : 'crm-status-prospect' }}">
-                                        {{ $row->is_approved ? 'Approved' : 'Pending' }}
+                                    <span class="crm-status crm-status-{{ $row->status }}">
+                                        {{ $statusOptions[$row->status] ?? $row->status }}
                                     </span>
+                                    @if($row->is_approved)
+                                        <div class="crm-muted mt-1">Approved</div>
+                                    @endif
                                     <div class="crm-muted mt-1">{{ $row->is_seen ? 'Seen' : 'Unseen' }}</div>
                                     <div class="crm-muted">
                                         PP: {{ $row->privacy_policy_accepted ? 'Yes' : 'No' }} /
@@ -235,6 +278,22 @@
                                                 </select>
                                                 <button class="btn btn-sm btn-outline-primary crm-icon-btn" type="submit" title="Assign">
                                                     <i class="fas fa-user-check"></i>
+                                                </button>
+                                            </form>
+                                        @endcan
+                                    @endif
+                                    @if(! $row->trashed())
+                                        @can('updateStatus', $row)
+                                            <form method="post" action="{{ route('gms-enquiries.status', $row->id) }}" class="crm-action-form">
+                                                @csrf
+                                                @method('PATCH')
+                                                <select name="status" class="form-control form-control-sm">
+                                                    @foreach($statusOptions as $value => $label)
+                                                        <option value="{{ $value }}" @selected($row->status === $value)>{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <button class="btn btn-sm btn-outline-success crm-icon-btn" type="submit" title="Update status">
+                                                    <i class="fas fa-check"></i>
                                                 </button>
                                             </form>
                                         @endcan

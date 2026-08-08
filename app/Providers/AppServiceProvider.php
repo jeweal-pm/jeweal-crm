@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Enquiry;
 use App\Models\GisEnquiry;
+use App\Models\GmsStoneEnquiry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\Paginator;
@@ -33,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::enforceMorphMap([
             'enquiry' => Enquiry::class,
             'gis_enquiry' => GisEnquiry::class,
+            'gms_stone_enquiry' => GmsStoneEnquiry::class,
             'user' => User::class,
         ]);
     }

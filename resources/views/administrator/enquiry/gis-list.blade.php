@@ -162,7 +162,14 @@
                                 <div class="crm-muted">{{ \Illuminate\Support\Str::limit($row->message, 86) }}</div>
                             </td>
                             <td>
-                                <div><a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a></div>
+                                <div class="crm-email-line">
+                                    <a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a>
+                                    @if(! $row->trashed())
+                                        <a class="crm-reply-link" href="{{ route('gis-enquiries.reply', $row->id) }}" title="Reply email">
+                                            <i class="fas fa-reply"></i>
+                                        </a>
+                                    @endif
+                                </div>
                                 <a href="tel:{{ $row->phone_number }}">{{ $row->phone_number }}</a>
                             </td>
                             <td>{{ $row->inquiry }}</td>

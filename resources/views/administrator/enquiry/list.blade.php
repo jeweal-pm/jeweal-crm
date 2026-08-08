@@ -170,7 +170,14 @@
                                 @endif
                             </td>
                             <td>
-                                <div><a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a></div>
+                                <div class="crm-email-line">
+                                    <a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a>
+                                    @if(! $row->trashed())
+                                        <a class="crm-reply-link" href="{{ route('enquiries.reply', $row->id) }}" title="Reply email">
+                                            <i class="fas fa-reply"></i>
+                                        </a>
+                                    @endif
+                                </div>
                                 <a href="tel:{{ $row->phone }}">{{ $row->phone }}</a>
                             </td>
                             <td>

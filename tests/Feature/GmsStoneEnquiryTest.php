@@ -7,6 +7,7 @@ use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -225,5 +226,69 @@ class GmsStoneEnquiryTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.assigned_to', $sale->id)
             ->assertJsonPath('data.assigned_by', $manager->id);
+    }
+
+    public function test_gms_web_status_update_changes_status_like_other_enquiries(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+
+        $manager = User::factory()->create();
+        $manager->assignRole('general_manager');
+
+        $enquiry = GmsStoneEnquiry::factory()->create([
+            'status' => 'lead_mql',
+            'is_approved' => false,
+        ]);
+
+        $this->actingAs($manager)
+            ->patch(route('gms-enquiries.status', $enquiry->id), ['status' => 'customer'])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('gms_stone_enquiries', [
+            'id' => $enquiry->id,
+            'status' => 'customer',
+            'is_approved' => true,
+            'last_updated_by' => $manager->id,
+            'closed_by' => $manager->id,
+        ]);
+    }
+
+    public function test_authorized_user_can_open_and_send_gms_reply_email(): void
+    {
+        Mail::fake();
+
+        $this->seed(RolePermissionSeeder::class);
+
+        $rootRole = Role::findByName('root');
+        $user = User::factory()->create(['primary_role_id' => $rootRole->id]);
+        $enquiry = GmsStoneEnquiry::factory()->create([
+            'full_name' => 'Reply Lead',
+            'email' => 'reply-lead@example.com',
+            'is_seen' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('gms-enquiries.reply', $enquiry->id))
+            ->assertOk()
+            ->assertSee('Reply to Reply Lead')
+            ->assertSee('reply-lead@example.com');
+
+        $this->actingAs($user)
+            ->post(route('gms-enquiries.reply.send', $enquiry->id), [
+                'subject' => 'GMS account follow up',
+                'message' => 'Thank you for your request.',
+            ])
+            ->assertRedirect(route('gms-enquiries.show', $enquiry->id));
+
+        Mail::assertSent(\App\Mail\GmsStoneEnquiryReply::class, function ($mail) {
+            return $mail->hasTo('reply-lead@example.com')
+                && $mail->replySubject === 'GMS account follow up'
+                && $mail->replyMessage === 'Thank you for your request.';
+        });
+
+        $this->assertDatabaseHas('gms_stone_enquiries', [
+            'id' => $enquiry->id,
+            'is_seen' => true,
+        ]);
     }
 }

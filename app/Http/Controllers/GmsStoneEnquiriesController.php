@@ -5,12 +5,17 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\GmsStoneEnquiryFilterRequest;
 use App\Http\Requests\GmsStoneEnquiryRequest;
+use App\Http\Requests\GmsStoneEnquiryReplyRequest;
+use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Http\Resources\GmsStoneEnquiryResource;
+use App\Mail\GmsStoneEnquiryReply;
 use App\Models\GmsStoneEnquiry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Services\Email\EnquiryEmailAutomationService;
 
 class GmsStoneEnquiriesController extends Controller
 {
@@ -35,6 +40,12 @@ class GmsStoneEnquiriesController extends Controller
             'teamUsers' => $this->teamUsers(),
             'filters' => $request->validated(),
             'summary' => $this->summary($request->user()),
+            'statusOptions' => [
+                'lead_mql' => 'Lead / MQL',
+                'sql' => 'SQL',
+                'prospect' => 'Prospect',
+                'customer' => 'Customer',
+            ],
         ]);
     }
 
@@ -52,6 +63,8 @@ class GmsStoneEnquiriesController extends Controller
     public function store(GmsStoneEnquiryRequest $request)
     {
         $enquiry = GmsStoneEnquiry::create($request->validated());
+        $enquiry->recordActivity('created');
+        app(EnquiryEmailAutomationService::class)->dispatchFor($enquiry, 'gms');
 
         if ($this->shouldReturnJson($request)) {
             return response()->json([
@@ -80,6 +93,46 @@ class GmsStoneEnquiriesController extends Controller
         return view('administrator.gms-enquiries.show', [
             'enquiry' => $enquiry,
         ]);
+    }
+
+    public function reply(Request $request, int $id)
+    {
+        $enquiry = GmsStoneEnquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        return view('administrator.gms-enquiries.reply', [
+            'enquiry' => $enquiry,
+            'subject' => 'Re: GMS stone account request',
+            'body' => $this->defaultReplyBody($enquiry, $request->user()),
+        ]);
+    }
+
+    public function sendReply(GmsStoneEnquiryReplyRequest $request, int $id)
+    {
+        $enquiry = GmsStoneEnquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        $validated = $request->validated();
+
+        Mail::to($enquiry->email, $enquiry->full_name)
+            ->send(new GmsStoneEnquiryReply(
+                $enquiry,
+                $validated['subject'],
+                $validated['message'],
+                $request->user()
+            ));
+
+        $enquiry->forceFill(['is_seen' => true])->save();
+
+        return redirect()
+            ->route('gms-enquiries.show', $enquiry->id)
+            ->with('status', 'Reply email sent successfully.');
     }
 
     public function edit(int $id)
@@ -179,6 +232,34 @@ class GmsStoneEnquiriesController extends Controller
         });
     }
 
+    public function updateStatus(UpdateEnquiryStatusRequest $request, int $id)
+    {
+        $actor = $request->user();
+
+        return DB::transaction(function () use ($actor, $id, $request) {
+            $enquiry = GmsStoneEnquiry::query()
+                ->visibleTo($actor)
+                ->whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $this->authorize('updateStatus', $enquiry);
+
+            $status = $request->validated('status');
+            $enquiry->changeStatus($status, $actor);
+
+            if ($status === 'customer' && ! $enquiry->is_approved) {
+                $enquiry->forceFill(['is_approved' => true])->save();
+            }
+
+            if (! $this->shouldReturnJson($request)) {
+                return redirect()->back()->with('status', 'Status updated successfully.');
+            }
+
+            return new GmsStoneEnquiryResource($enquiry->refresh());
+        });
+    }
+
     private function applyFilters(Builder $query, GmsStoneEnquiryFilterRequest $request): Builder
     {
         $validated = $request->validated();
@@ -193,6 +274,7 @@ class GmsStoneEnquiriesController extends Controller
 
         $query
             ->when($validated['account_type'] ?? null, fn (Builder $query, string $type) => $query->where('account_type', $type))
+            ->when($validated['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when(array_key_exists('is_seen', $validated) && $validated['is_seen'] !== null, fn (Builder $query) => $query->where('is_seen', (bool) $validated['is_seen']))
             ->when(array_key_exists('is_approved', $validated) && $validated['is_approved'] !== null, fn (Builder $query) => $query->where('is_approved', (bool) $validated['is_approved']))
             ->when($validated['assigned_to'] ?? null, fn (Builder $query, int $userId) => $query->where('assigned_to', $userId))
@@ -224,6 +306,7 @@ class GmsStoneEnquiriesController extends Controller
 
         return array_intersect_key($query, array_flip([
             'account_type',
+            'status',
             'is_seen',
             'is_approved',
             'trashed',
@@ -286,6 +369,15 @@ class GmsStoneEnquiriesController extends Controller
             'approved' => (clone $base)->where('is_approved', true)->count(),
             'deleted' => (clone $base)->onlyTrashed()->count(),
         ];
+    }
+
+    private function defaultReplyBody(GmsStoneEnquiry $enquiry, User $user): string
+    {
+        return trim(sprintf(
+            "Dear %s,\n\nThank you for your GMS stone account request. We have received your information and our team will review it shortly.\n\nBest regards,\n%s",
+            $enquiry->full_name,
+            $user->name
+        ));
     }
 
     private function shouldReturnJson(Request $request): bool

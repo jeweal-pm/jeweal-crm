@@ -3,11 +3,14 @@
 namespace Tests\Feature;
 
 use App\Models\Enquiry;
+use App\Models\GisEnquiry;
 use App\Models\User;
 use App\Services\Spam\EnquirySpamScorer;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -15,6 +18,13 @@ use Tests\TestCase;
 class EnquiryWorkflowTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        File::deleteDirectory(storage_path('app/rate_limit'));
+    }
 
     public function test_public_enquiry_submission_ignores_client_status(): void
     {
@@ -243,5 +253,74 @@ class EnquiryWorkflowTest extends TestCase
         $this->assertSame('sale', $user->primaryRoleName());
         $this->assertTrue($user->hasRole('sale'));
         $this->assertTrue($user->is_active);
+    }
+
+    public function test_authorized_user_can_open_and_send_enquiry_reply_email(): void
+    {
+        Mail::fake();
+
+        $this->seed(RolePermissionSeeder::class);
+
+        $rootRole = Role::findByName('root');
+        $user = User::factory()->create(['primary_role_id' => $rootRole->id]);
+        $enquiry = Enquiry::factory()->create([
+            'name' => 'Reply Enquiry Lead',
+            'email' => 'reply-enquiry@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('enquiries.reply', $enquiry->id))
+            ->assertOk()
+            ->assertSee('Reply to Reply Enquiry Lead')
+            ->assertSee('reply-enquiry@example.com');
+
+        $this->actingAs($user)
+            ->post(route('enquiries.reply.send', $enquiry->id), [
+                'subject' => 'CRM follow up',
+                'message' => 'Thank you for contacting us.',
+            ])
+            ->assertRedirect(route('enquiry.index'));
+
+        Mail::assertSent(\App\Mail\EnquiryReply::class, function ($mail) {
+            return $mail->hasTo('reply-enquiry@example.com')
+                && $mail->enquiryType === 'CRM enquiry'
+                && $mail->replySubject === 'CRM follow up'
+                && $mail->replyMessage === 'Thank you for contacting us.';
+        });
+    }
+
+    public function test_authorized_user_can_open_and_send_gis_reply_email(): void
+    {
+        Mail::fake();
+
+        $this->seed(RolePermissionSeeder::class);
+
+        $rootRole = Role::findByName('root');
+        $user = User::factory()->create(['primary_role_id' => $rootRole->id]);
+        $enquiry = GisEnquiry::factory()->create([
+            'first_name' => 'GIS',
+            'last_name' => 'Lead',
+            'email' => 'reply-gis@example.com',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('gis-enquiries.reply', $enquiry->id))
+            ->assertOk()
+            ->assertSee('Reply to GIS Lead')
+            ->assertSee('reply-gis@example.com');
+
+        $this->actingAs($user)
+            ->post(route('gis-enquiries.reply.send', $enquiry->id), [
+                'subject' => 'GIS follow up',
+                'message' => 'Thank you for contacting us about GIS.',
+            ])
+            ->assertRedirect(route('gisEnquiry'));
+
+        Mail::assertSent(\App\Mail\EnquiryReply::class, function ($mail) {
+            return $mail->hasTo('reply-gis@example.com')
+                && $mail->enquiryType === 'GIS enquiry'
+                && $mail->replySubject === 'GIS follow up'
+                && $mail->replyMessage === 'Thank you for contacting us about GIS.';
+        });
     }
 }
