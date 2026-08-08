@@ -18,6 +18,9 @@
                     <i class="fas fa-arrow-left"></i> Back
                 </a>
                 @if(! $enquiry->trashed())
+                    <a class="btn btn-outline-primary btn-sm" href="{{ route('gms-enquiries.reply', $enquiry->id) }}">
+                        <i class="fas fa-reply"></i> Reply
+                    </a>
                     <a class="btn btn-primary btn-sm" href="{{ route('gms-enquiries.edit', $enquiry->id) }}">
                         <i class="fas fa-pen"></i> Edit
                     </a>
@@ -25,11 +28,15 @@
             </div>
         </div>
 
+        @if(session('status'))
+            <div class="alert alert-success">{{ session('status') }}</div>
+        @endif
+
         <div class="crm-panel">
             <div class="crm-panel-head">
                 <h3 class="crm-panel-title">Request Details</h3>
-                <span class="crm-status {{ $enquiry->trashed() ? 'crm-status-deleted' : ($enquiry->is_approved ? 'crm-status-customer' : 'crm-status-prospect') }}">
-                    {{ $enquiry->trashed() ? 'Deleted' : ($enquiry->is_approved ? 'Approved' : 'Pending') }}
+                <span class="crm-status {{ $enquiry->trashed() ? 'crm-status-deleted' : 'crm-status-'.$enquiry->status }}">
+                    {{ $enquiry->trashed() ? 'Deleted' : \App\Enums\EnquiryStatus::label($enquiry->status) }}
                 </span>
             </div>
             <div class="p-3">

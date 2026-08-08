@@ -5,16 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkDeleteEnquiryRequest;
 use App\Http\Requests\EnquiryFilterRequest;
+use App\Http\Requests\EnquiryReplyRequest;
 use App\Http\Requests\GisEnquiryRequest;
 use App\Http\Requests\UpdateSpamStatusRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Http\Resources\GisEnquiryResource;
+use App\Mail\EnquiryReply;
 use App\Models\GisEnquiry;
 use App\Models\User;
 use App\Services\Spam\EnquirySpamScorer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Services\Email\EnquiryEmailAutomationService;
 
 class GisEnquiriesController extends Controller
 {
@@ -71,6 +75,7 @@ class GisEnquiriesController extends Controller
         $enquiry = GisEnquiry::create($request->validated());
         app(EnquirySpamScorer::class)->apply($enquiry);
         $enquiry->recordActivity('created');
+        app(EnquiryEmailAutomationService::class)->dispatchFor($enquiry, 'gis');
 
         return response()->json([
             'status' => 'complete',
@@ -206,6 +211,54 @@ class GisEnquiriesController extends Controller
         ])->save();
 
         return redirect()->back();
+    }
+
+    public function reply(Request $request, int $id)
+    {
+        $enquiry = GisEnquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        $name = trim($enquiry->first_name.' '.$enquiry->last_name);
+
+        return view('administrator.enquiry.reply', [
+            'enquiry' => $enquiry,
+            'type' => 'gis',
+            'backRoute' => route('gisEnquiry'),
+            'sendRoute' => route('gis-enquiries.reply.send', $enquiry->id),
+            'recipientName' => $name,
+            'recipientEmail' => $enquiry->email,
+            'subtitle' => $enquiry->inquiry ?: 'GIS enquiry',
+            'subject' => 'Re: Your GIS enquiry',
+            'body' => $this->defaultReplyBody($name, $request->user()),
+        ]);
+    }
+
+    public function sendReply(EnquiryReplyRequest $request, int $id)
+    {
+        $enquiry = GisEnquiry::query()
+            ->visibleTo($request->user())
+            ->findOrFail($id);
+
+        $this->authorize('view', $enquiry);
+
+        $validated = $request->validated();
+        $name = trim($enquiry->first_name.' '.$enquiry->last_name);
+
+        Mail::to($enquiry->email, $name)
+            ->send(new EnquiryReply(
+                $enquiry,
+                'GIS enquiry',
+                $validated['subject'],
+                $validated['message'],
+                $request->user()
+            ));
+
+        return redirect()
+            ->route('gisEnquiry')
+            ->with('status', 'Reply email sent successfully.');
     }
 
     /**
@@ -390,5 +443,14 @@ class GisEnquiriesController extends Controller
             'suspected_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_SUSPECTED)->count(),
             'confirmed_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CONFIRMED)->count(),
         ];
+    }
+
+    private function defaultReplyBody(string $name, User $user): string
+    {
+        return trim(sprintf(
+            "Dear %s,\n\nThank you for your GIS enquiry. We have received your information and our team will follow up shortly.\n\nBest regards,\n%s",
+            $name,
+            $user->name
+        ));
     }
 }

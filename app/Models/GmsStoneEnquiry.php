@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEnquiryWorkflow;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GmsStoneEnquiry extends Model
 {
+    use HasEnquiryWorkflow;
     use HasFactory;
     use SoftDeletes;
 
@@ -18,6 +19,7 @@ class GmsStoneEnquiry extends Model
         'phone_number',
         'country_code',
         'account_type',
+        'status',
         'business_name',
         'company_name',
         'tax_id',
@@ -39,39 +41,17 @@ class GmsStoneEnquiry extends Model
             'terms_conditions_accepted',
         ];
 
+    protected $attributes = [
+        'status' => 'lead_mql',
+    ];
+
     protected $casts = [
         'is_seen' => 'boolean',
         'is_approved' => 'boolean',
         'privacy_policy_accepted' => 'boolean',
         'terms_conditions_accepted' => 'boolean',
         'assigned_at' => 'datetime',
+        'closed_at' => 'datetime',
+        'counts_for_sale_kpi' => 'boolean',
     ];
-
-    public function assignedTo(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_to');
-    }
-
-    public function assignedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'assigned_by');
-    }
-
-    public function scopeVisibleTo($query, User $user)
-    {
-        if ($user->hasCrmPermission('enquiry.view.all')) {
-            return $query;
-        }
-
-        return $query->where($this->getTable().'.assigned_to', $user->id);
-    }
-
-    public function assignTo(User $target, User $actor): void
-    {
-        $this->forceFill([
-            'assigned_to' => $target->id,
-            'assigned_by' => $actor->id,
-            'assigned_at' => now(),
-        ])->save();
-    }
 }

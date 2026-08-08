@@ -34,6 +34,14 @@
                     <span>GMS Enquiries</span>
                 </a>
             </li>
+            @if(Auth::user()->hasCrmPermission('email.view'))
+                <li>
+                    <a href="{{ route('email.dashboard') }}" class="crm-sidebar-link {{ request()->routeIs('email.*') ? 'crm-active' : '' }}">
+                        <i class="fas fa-envelope-open-text"></i>
+                        <span>Email Management</span>
+                    </a>
+                </li>
+            @endif
         </ul>
 
         @if(Auth::user()->hasCrmPermission('user.view'))
