@@ -32,6 +32,11 @@ class EmailAutomationTest extends TestCase
         $this->assertDatabaseCount('email_messages', 2);
         $this->assertDatabaseHas('email_messages', ['message_type' => 'transactional', 'to_email' => 'automation@example.com']);
         $this->assertDatabaseHas('email_messages', ['message_type' => 'internal', 'to_email' => 'ops@example.com']);
+        $customerMessage = EmailMessage::where('message_type', 'transactional')->firstOrFail();
+        $internalMessage = EmailMessage::where('message_type', 'internal')->firstOrFail();
+        $this->assertStringContainsString('#1a1c4a', $customerMessage->html_content);
+        $this->assertStringContainsString('https://jeweal.com/wp-content/themes/fourteen-blog/libarm/img/nav/logo-jeweal.png', $customerMessage->html_content);
+        $this->assertStringContainsString('Automation Co', $internalMessage->html_content);
         Mail::assertSent(ManagedEmailMailable::class, 2);
     }
 
@@ -99,6 +104,41 @@ class EmailAutomationTest extends TestCase
         $this->assertStringContainsString('GIS Manage Pro', $internalMessage->html_content);
         $this->assertSame(['gis-cc@example.com'], $internalMessage->cc);
         Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gis@example.com');
+        Mail::assertSent(ManagedEmailMailable::class, 2);
+    }
+
+    public function test_new_gms_enquiry_uses_gms_branded_customer_and_internal_templates(): void
+    {
+        Mail::fake();
+        config([
+            'email_management.internal_recipients' => ['gms-team@example.com'],
+            'email_management.sender_addresses.gms' => 'gms@example.com',
+        ]);
+        $this->seed(EmailManagementSeeder::class);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '10.10.10.23'])
+            ->postJson('/api/gms-stone-enquiry', [
+                'full_name' => 'GMS Requester',
+                'email' => 'gms-requester@example.com',
+                'phone_number' => '+66810000000',
+                'country_code' => 'TH',
+                'country' => 'Thailand',
+                'account_type' => 'business',
+                'company_name' => 'GMS Customer Co',
+                'privacy_policy_accepted' => true,
+                'terms_conditions_accepted' => true,
+            ])->assertCreated();
+
+        $this->assertDatabaseCount('email_messages', 2);
+        $this->assertDatabaseHas('email_messages', ['message_type' => 'transactional', 'to_email' => 'gms-requester@example.com']);
+        $this->assertDatabaseHas('email_messages', ['message_type' => 'internal', 'to_email' => 'gms-team@example.com']);
+
+        $customerMessage = EmailMessage::where('message_type', 'transactional')->firstOrFail();
+        $internalMessage = EmailMessage::where('message_type', 'internal')->firstOrFail();
+        $this->assertStringContainsString('#00453F', $customerMessage->html_content);
+        $this->assertStringContainsString('https://gms-stone.com/image/logo.png', $customerMessage->html_content);
+        $this->assertStringContainsString('GMS Customer Co', $internalMessage->html_content);
+        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gms@example.com');
         Mail::assertSent(ManagedEmailMailable::class, 2);
     }
 }

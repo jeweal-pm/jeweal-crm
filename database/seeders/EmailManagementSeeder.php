@@ -69,13 +69,136 @@ HTML;
 </table>
 HTML;
 
+        $gmsInternalHtml = <<<'HTML'
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#00453F;margin:0;padding:32px 12px;color:#1f2933;font-family:Arial,Helvetica,sans-serif;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+<tr><td style="padding:4px 2px 28px;">
+<img src="https://gms-stone.com/image/logo.png" alt="GMS Stone" width="150" style="display:block;height:auto;max-width:150px;">
+<div style="color:#ffffff;font-size:13px;font-weight:bold;text-align:right;margin-top:-18px;">{{submitted_at}}</div>
+</td></tr>
+<tr><td style="background:#ffffff;border-radius:24px;padding:34px 40px 30px;font-size:14px;line-height:1.55;">
+<p style="margin:0 0 22px;">Dear GMS Stone Team,</p>
+<p style="margin:0 0 18px;">A new GMS Stone enquiry has been submitted through the website. Please review the details below and follow up with the requester.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;line-height:1.45;">
+<tr><td style="color:#667085;width:145px;padding:3px 0;">Reference</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{enquiry_number}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Name</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{first_name}} {{last_name}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Company</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{company_name}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Email</td><td style="color:#0b6b62;font-weight:bold;padding:3px 0;">{{email}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Phone number</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{phone}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Country</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{country}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;vertical-align:top;">Message</td><td style="color:#1f2933;padding:3px 0;">{{message}}</td></tr>
+</table>
+<p style="margin:24px 0 18px;">Please contact the requester when appropriate. Reply to this email if you need any further information.</p>
+<p style="margin:0;">Best regards,<br><strong style="color:#00453F;">GMS Stone</strong></p>
+</td></tr>
+<tr><td style="padding:28px 2px 0;color:#ffffff;font-size:13px;font-weight:bold;">GMS Stone</td></tr>
+<tr><td style="padding:16px 0 12px;color:#d9ebe6;font-size:12px;">This is an automated notification from the GMS Stone enquiry system.</td></tr>
+</table>
+</td></tr>
+</table>
+HTML;
+
+        $gmsCustomerHtml = <<<'HTML'
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#00453F;margin:0;padding:32px 12px;color:#1f2933;font-family:Arial,Helvetica,sans-serif;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+<tr><td style="padding:4px 2px 28px;">
+<img src="https://gms-stone.com/image/logo.png" alt="GMS Stone" width="150" style="display:block;height:auto;max-width:150px;">
+<div style="color:#ffffff;font-size:13px;font-weight:bold;text-align:right;margin-top:-18px;">{{submitted_at}}</div>
+</td></tr>
+<tr><td style="background:#ffffff;border-radius:24px;padding:34px 40px 30px;font-size:14px;line-height:1.55;">
+<p style="margin:0 0 22px;">Dear {{first_name}},</p>
+<p style="margin:0 0 18px;">Thank you for contacting GMS Stone.</p>
+<p style="margin:0 0 18px;">We have received your enquiry and our team is reviewing your request. A member of our team will contact you as soon as possible.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#edf6f3;border-left:3px solid #00453F;font-size:14px;line-height:1.45;margin:22px 0;padding:12px 16px;">
+<tr><td style="color:#667085;padding:3px 0;">Reference number</td><td style="color:#00453F;font-weight:bold;padding:3px 0;">{{enquiry_number}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Submitted</td><td style="color:#1f2933;padding:3px 0;">{{submitted_at}}</td></tr>
+</table>
+<p style="margin:0 0 18px;">If you need to provide additional information, simply reply to this email and include your reference number.</p>
+<p style="margin:0 0 22px;">We appreciate your interest and look forward to assisting you.</p>
+<p style="margin:0;">Best regards,<br><strong style="color:#00453F;">GMS Stone Team</strong></p>
+</td></tr>
+<tr><td style="padding:28px 2px 0;color:#ffffff;font-size:13px;font-weight:bold;">GMS Stone</td></tr>
+<tr><td style="padding:16px 0 12px;color:#d9ebe6;font-size:12px;">Thank you for choosing GMS Stone.</td></tr>
+</table>
+</td></tr>
+</table>
+HTML;
+
+        $jewealInternalHtml = <<<'HTML'
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1a1c4a;margin:0;padding:32px 12px;color:#1f2933;font-family:Arial,Helvetica,sans-serif;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+<tr><td style="padding:4px 2px 28px;">
+<img src="https://jeweal.com/wp-content/themes/fourteen-blog/libarm/img/nav/logo-jeweal.png" alt="Jeweal" width="150" style="display:block;height:auto;max-width:150px;">
+<div style="color:#ffffff;font-size:13px;font-weight:bold;text-align:right;margin-top:-18px;">{{submitted_at}}</div>
+</td></tr>
+<tr><td style="background:#ffffff;border-radius:24px;padding:34px 40px 30px;font-size:14px;line-height:1.55;">
+<p style="margin:0 0 22px;">Dear Jeweal Team,</p>
+<p style="margin:0 0 18px;">A new Jeweal enquiry has been submitted through the website. Please review the details below and follow up with the requester.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;line-height:1.45;">
+<tr><td style="color:#667085;width:145px;padding:3px 0;">Reference</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{enquiry_number}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Name</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{first_name}} {{last_name}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Company</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{company_name}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Email</td><td style="color:#33429b;font-weight:bold;padding:3px 0;">{{email}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Phone number</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{phone}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Country</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{country}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;vertical-align:top;">Message</td><td style="color:#1f2933;padding:3px 0;">{{message}}</td></tr>
+</table>
+<p style="margin:24px 0 18px;">Please contact the requester when appropriate. Reply to this email if you need any further information.</p>
+<p style="margin:0;">Best regards,<br><strong style="color:#1a1c4a;">Jeweal</strong></p>
+</td></tr>
+<tr><td style="padding:28px 2px 0;color:#ffffff;font-size:13px;font-weight:bold;">Jeweal</td></tr>
+<tr><td style="padding:16px 0 12px;color:#d9dff7;font-size:12px;">This is an automated notification from the Jeweal enquiry system.</td></tr>
+</table>
+</td></tr>
+</table>
+HTML;
+
+        $jewealCustomerHtml = <<<'HTML'
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#1a1c4a;margin:0;padding:32px 12px;color:#1f2933;font-family:Arial,Helvetica,sans-serif;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+<tr><td style="padding:4px 2px 28px;">
+<img src="https://jeweal.com/wp-content/themes/fourteen-blog/libarm/img/nav/logo-jeweal.png" alt="Jeweal" width="150" style="display:block;height:auto;max-width:150px;">
+<div style="color:#ffffff;font-size:13px;font-weight:bold;text-align:right;margin-top:-18px;">{{submitted_at}}</div>
+</td></tr>
+<tr><td style="background:#ffffff;border-radius:24px;padding:34px 40px 30px;font-size:14px;line-height:1.55;">
+<p style="margin:0 0 22px;">Dear {{first_name}},</p>
+<p style="margin:0 0 18px;">Thank you for contacting Jeweal.</p>
+<p style="margin:0 0 18px;">We have received your enquiry and our team is reviewing your request. A member of our team will contact you as soon as possible.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0f1fb;border-left:3px solid #1a1c4a;font-size:14px;line-height:1.45;margin:22px 0;padding:12px 16px;">
+<tr><td style="color:#667085;padding:3px 0;">Reference number</td><td style="color:#1a1c4a;font-weight:bold;padding:3px 0;">{{enquiry_number}}</td></tr>
+<tr><td style="color:#667085;padding:3px 0;">Submitted</td><td style="color:#1f2933;padding:3px 0;">{{submitted_at}}</td></tr>
+</table>
+<p style="margin:0 0 18px;">If you need to provide additional information, simply reply to this email and include your reference number.</p>
+<p style="margin:0 0 22px;">We appreciate your interest and look forward to assisting you.</p>
+<p style="margin:0;">Best regards,<br><strong style="color:#1a1c4a;">Jeweal Team</strong></p>
+</td></tr>
+<tr><td style="padding:28px 2px 0;color:#ffffff;font-size:13px;font-weight:bold;">Jeweal</td></tr>
+<tr><td style="padding:16px 0 12px;color:#d9dff7;font-size:12px;">Thank you for choosing Jeweal.</td></tr>
+</table>
+</td></tr>
+</table>
+HTML;
+
         $templates = [
-            'general-enquiry-confirmation' => ['General Enquiry Confirmation', 'general', 'transactional', 'enquiry_confirmation', null, null],
+            'general-enquiry-confirmation' => ['Jeweal Enquiry Confirmation', 'general', 'transactional', 'enquiry_confirmation', $jewealCustomerHtml, 'Thank you for contacting Jeweal - {{enquiry_number}}'],
             'gis-enquiry-confirmation' => ['GIS Enquiry Confirmation', 'gis', 'transactional', 'enquiry_confirmation', $gisCustomerHtml, 'Thank you for contacting GIS Manage Pro - {{enquiry_number}}'],
-            'gms-enquiry-confirmation' => ['GMS Enquiry Confirmation', 'gms', 'transactional', 'enquiry_confirmation', null, null],
-            'general-internal-notification' => ['General Enquiry Internal Notification', 'general_internal', 'internal', 'internal_notification', null, null],
+            'gms-enquiry-confirmation' => ['GMS Enquiry Confirmation', 'gms', 'transactional', 'enquiry_confirmation', $gmsCustomerHtml, 'Thank you for contacting GMS Stone - {{enquiry_number}}'],
+            'general-internal-notification' => ['Jeweal Enquiry Internal Notification', 'general_internal', 'internal', 'internal_notification', $jewealInternalHtml, 'New Jeweal enquiry received - {{enquiry_number}}'],
             'gis-internal-notification' => ['GIS Enquiry Internal Notification', 'gis_internal', 'internal', 'internal_notification', $gisInternalHtml, 'New GIS enquiry received - {{enquiry_number}}'],
-            'gms-internal-notification' => ['GMS Enquiry Internal Notification', 'gms_internal', 'internal', 'internal_notification', null, null],
+            'gms-internal-notification' => ['GMS Enquiry Internal Notification', 'gms_internal', 'internal', 'internal_notification', $gmsInternalHtml, 'New GMS Stone enquiry received - {{enquiry_number}}'],
+        ];
+
+        $plainText = [
+            'general-enquiry-confirmation' => "Dear {{first_name}},\n\nThank you for contacting Jeweal. We have received your enquiry. Reference: {{enquiry_number}}. Our team will contact you as soon as possible.\n\nBest regards,\nJeweal Team",
+            'general-internal-notification' => "New Jeweal enquiry received.\n\nReference: {{enquiry_number}}\nName: {{first_name}} {{last_name}}\nCompany: {{company_name}}\nEmail: {{email}}\nPhone: {{phone}}\nCountry: {{country}}\nMessage: {{message}}",
+            'gis-enquiry-confirmation' => "Dear {{first_name}},\n\nThank you for contacting GIS Manage Pro. We have received your enquiry. Reference: {{enquiry_number}}. Our team will contact you as soon as possible.\n\nBest regards,\nGIS Manage Pro Team",
+            'gis-internal-notification' => "New GIS enquiry received.\n\nReference: {{enquiry_number}}\nName: {{first_name}} {{last_name}}\nEmail: {{email}}\nPhone: {{phone}}\nCountry: {{country}}\nInquiry: {{inquiry}}\nMessage: {{message}}",
+            'gms-enquiry-confirmation' => "Dear {{first_name}},\n\nThank you for contacting GMS Stone. We have received your enquiry. Reference: {{enquiry_number}}. Our team will contact you as soon as possible.\n\nBest regards,\nGMS Stone Team",
+            'gms-internal-notification' => "New GMS Stone enquiry received.\n\nReference: {{enquiry_number}}\nName: {{first_name}} {{last_name}}\nCompany: {{company_name}}\nEmail: {{email}}\nPhone: {{phone}}\nCountry: {{country}}\nMessage: {{message}}",
         ];
 
         $ids = [];
@@ -88,14 +211,10 @@ HTML;
                 'subject' => $customSubject ?: $name.' - {{enquiry_number}}',
                 'preview_text' => 'Thank you for contacting us.',
                 'html_content' => $html,
-                'plain_text_content' => $code === 'gis-enquiry-confirmation'
-                    ? "Dear {{first_name}},\n\nThank you for contacting GIS Manage Pro. We have received your enquiry. Reference: {{enquiry_number}}. Our team will contact you as soon as possible.\n\nBest regards,\nGIS Manage Pro Team"
-                    : ($code === 'gis-internal-notification'
-                        ? "New GIS enquiry received.\n\nReference: {{enquiry_number}}\nName: {{first_name}} {{last_name}}\nEmail: {{email}}\nPhone: {{phone}}\nCountry: {{country}}\nInquiry: {{inquiry}}\nMessage: {{message}}"
-                        : 'Dear {{first_name}},\n\nThank you for your enquiry. Reference: {{enquiry_number}}\n\nBest regards,\n{{sales_owner_name}}'),
+                'plain_text_content' => $plainText[$code] ?? 'Dear {{first_name}},\n\nThank you for your enquiry. Reference: {{enquiry_number}}\n\nBest regards,\n{{sales_owner_name}}',
                 'status' => 'published',
-                'sender_name' => str_starts_with($code, 'gis-') ? 'GIS Manage Pro' : null,
-                'variables' => ['first_name', 'last_name', 'email', 'enquiry_number', 'enquiry_type', 'submitted_at', 'sales_owner_name', 'unsubscribe_url', 'country', 'phone', 'inquiry', 'message'],
+                'sender_name' => str_starts_with($code, 'gis-') ? 'GIS Manage Pro' : (str_starts_with($code, 'gms-') ? 'GMS Stone' : (str_starts_with($code, 'general-') ? 'Jeweal' : null)),
+                'variables' => ['first_name', 'last_name', 'email', 'company_name', 'enquiry_number', 'enquiry_type', 'submitted_at', 'sales_owner_name', 'unsubscribe_url', 'country', 'phone', 'inquiry', 'message'],
             ]);
             $ids[$subjectType] = $template->id;
         }
