@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\User;
+use App\Services\Email\EmailSenderResolver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Mail\Mailable;
@@ -34,8 +35,14 @@ class EnquiryReply extends Mailable
 
     public function build(): self
     {
-        return $this
+        $mail = $this
             ->subject($this->replySubject)
             ->view('mail.enquiry-reply');
+
+        if ($this->enquiryType === 'GIS enquiry') {
+            $mail->from(app(EmailSenderResolver::class)->resolve('gis'), 'GIS247');
+        }
+
+        return $mail;
     }
 }

@@ -301,13 +301,17 @@ class EnquiryWorkflowTest extends TestCase
             'first_name' => 'GIS',
             'last_name' => 'Lead',
             'email' => 'reply-gis@example.com',
+            'inquiry' => 'request_quotation',
         ]);
+
+        config(['email_management.sender_addresses.gis' => 'gis247@example.com']);
 
         $this->actingAs($user)
             ->get(route('gis-enquiries.reply', $enquiry->id))
             ->assertOk()
             ->assertSee('Reply to GIS Lead')
-            ->assertSee('reply-gis@example.com');
+            ->assertSee('reply-gis@example.com')
+            ->assertSee('Re: request quotation');
 
         $this->actingAs($user)
             ->post(route('gis-enquiries.reply.send', $enquiry->id), [
@@ -317,10 +321,13 @@ class EnquiryWorkflowTest extends TestCase
             ->assertRedirect(route('gisEnquiry'));
 
         Mail::assertSent(\App\Mail\EnquiryReply::class, function ($mail) {
+            $mail->build();
+
             return $mail->hasTo('reply-gis@example.com')
                 && $mail->enquiryType === 'GIS enquiry'
                 && $mail->replySubject === 'GIS follow up'
-                && $mail->replyMessage === 'Thank you for contacting us about GIS.';
+                && $mail->replyMessage === 'Thank you for contacting us about GIS.'
+                && $mail->hasFrom('gis247@example.com', 'GIS247');
         });
     }
 }
