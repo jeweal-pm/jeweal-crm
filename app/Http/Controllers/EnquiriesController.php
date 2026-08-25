@@ -78,6 +78,7 @@ class EnquiriesController extends Controller
         app(EnquiryEmailAutomationService::class)->dispatchFor($enquiry, 'general');
 
         return response()->json([
+            'success' => true,
             'status' => 'complete',
             'data' => new EnquiryResource($enquiry),
         ], 201);

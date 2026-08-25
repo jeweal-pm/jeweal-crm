@@ -68,6 +68,7 @@ class GmsStoneEnquiriesController extends Controller
 
         if ($this->shouldReturnJson($request)) {
             return response()->json([
+                'success' => true,
                 'status' => 'complete',
                 'data' => new GmsStoneEnquiryResource($enquiry),
             ], 201);

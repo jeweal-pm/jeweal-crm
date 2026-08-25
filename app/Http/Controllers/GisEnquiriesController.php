@@ -78,6 +78,7 @@ class GisEnquiriesController extends Controller
         app(EnquiryEmailAutomationService::class)->dispatchFor($enquiry, 'gis');
 
         return response()->json([
+            'success' => true,
             'status' => 'complete',
             'data' => new GisEnquiryResource($enquiry),
         ], 201);
