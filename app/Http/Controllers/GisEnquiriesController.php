@@ -231,7 +231,7 @@ class GisEnquiriesController extends Controller
             'recipientName' => $name,
             'recipientEmail' => $enquiry->email,
             'subtitle' => $enquiry->inquiry ?: 'GIS enquiry',
-            'subject' => 'Re: Your GIS enquiry',
+            'subject' => $this->replySubject($enquiry),
             'body' => $this->defaultReplyBody($name, $request->user()),
         ]);
     }
@@ -452,5 +452,12 @@ class GisEnquiriesController extends Controller
             $name,
             $user->name
         ));
+    }
+
+    private function replySubject(GisEnquiry $enquiry): string
+    {
+        $inquiry = trim(str_replace('_', ' ', (string) $enquiry->inquiry));
+
+        return 'Re: '.($inquiry ?: 'GIS enquiry');
     }
 }
