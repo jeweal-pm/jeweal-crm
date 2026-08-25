@@ -45,6 +45,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | API-only mode
+    |--------------------------------------------------------------------------
+    |
+    | The only-api branch does not register browser-facing web routes. Set this
+    | to false only in a controlled environment that needs the CRM interface.
+    |
+    */
+
+    'api_only' => env('API_ONLY', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

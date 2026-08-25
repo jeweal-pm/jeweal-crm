@@ -9,6 +9,11 @@ use App\Http\Controllers\GmsStoneEnquiriesController;
 use App\Http\Controllers\EmailSubscriptionController;
 use App\Http\Controllers\EmailTrackingController;
 use App\Http\Controllers\EmailManagementController;
+
+if (config('app.api_only')) {
+    return;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
