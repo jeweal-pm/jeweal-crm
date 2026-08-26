@@ -33,6 +33,7 @@ class ProcessEmailAutomation extends Command
             ->where('status', 'active')
             ->whereNotNull('next_scheduled_at')
             ->where('next_scheduled_at', '<=', now())
+            ->whereHas('sequence', fn ($query) => $query->where('status', 'published'))
             ->chunkById(100, function ($enrollments) use ($messages) {
                 foreach ($enrollments as $enrollment) {
                     $step = $enrollment->sequence->steps->firstWhere('step_number', $enrollment->current_step);

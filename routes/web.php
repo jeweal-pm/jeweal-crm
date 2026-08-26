@@ -68,8 +68,13 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/campaigns/{id}/run', [EmailManagementController::class, 'runCampaign'])->middleware('permission:email.campaign.send')->name('campaigns.run');
         Route::post('/campaigns/{id}/variants', [EmailManagementController::class, 'storeVariant'])->middleware('permission:email.campaign.manage')->name('campaigns.variants.store');
         Route::get('/sequences', [EmailManagementController::class, 'sequences'])->middleware('permission:email.view')->name('sequences');
+        Route::get('/sequences/create', [EmailManagementController::class, 'createSequence'])->middleware('permission:email.sequence.manage')->name('sequences.create');
         Route::post('/sequences', [EmailManagementController::class, 'storeSequence'])->middleware('permission:email.sequence.manage')->name('sequences.store');
+        Route::get('/sequences/{id}', [EmailManagementController::class, 'showSequence'])->middleware('permission:email.view')->name('sequences.show');
+        Route::put('/sequences/{id}', [EmailManagementController::class, 'updateSequence'])->middleware('permission:email.sequence.manage')->name('sequences.update');
         Route::post('/sequences/{id}/steps', [EmailManagementController::class, 'storeSequenceStep'])->middleware('permission:email.sequence.manage')->name('sequences.steps.store');
+        Route::put('/sequences/{id}/steps/{stepId}', [EmailManagementController::class, 'updateSequenceStep'])->middleware('permission:email.sequence.manage')->name('sequences.steps.update');
+        Route::delete('/sequences/{id}/steps/{stepId}', [EmailManagementController::class, 'destroySequenceStep'])->middleware('permission:email.sequence.manage')->name('sequences.steps.destroy');
         Route::get('/enrollments', [EmailManagementController::class, 'enrollments'])->middleware('permission:email.view')->name('enrollments');
         Route::post('/enrollments', [EmailManagementController::class, 'enroll'])->middleware('permission:email.sequence.manage')->name('enrollments.store');
         Route::get('/logs', [EmailManagementController::class, 'logs'])->middleware('permission:email.view')->name('logs');
