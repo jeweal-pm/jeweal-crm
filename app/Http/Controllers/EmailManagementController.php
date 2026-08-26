@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\EmailAutomationConfigRequest;
+use App\Http\Requests\EmailSequenceRequest;
 use App\Http\Requests\EmailSequenceStepRequest;
 use App\Http\Requests\EmailTemplateRequest;
 use App\Http\Requests\EmailTestSendRequest;
@@ -241,24 +242,97 @@ class EmailManagementController extends Controller
 
     public function sequences()
     {
-        return view('administrator.email.sequences.index', ['sequences' => EmailSequenceTemplate::with(['steps.template'])->withCount('steps')->latest()->paginate(20), 'templates' => EmailTemplate::where('status', 'published')->get()]);
+        return view('administrator.email.sequences.index', [
+            'sequences' => EmailSequenceTemplate::query()->withCount('steps')->latest()->paginate(20),
+        ]);
     }
 
-    public function storeSequence(Request $request)
+    public function createSequence()
     {
-        abort_unless($request->user()->hasCrmPermission('email.sequence.manage'), 403);
-        $data = $request->validate(['name' => ['required', 'string', 'max:150'], 'code' => ['required', 'alpha_dash'], 'description' => ['nullable', 'string'], 'status' => ['required', 'in:draft,published,paused,archived']]);
-        EmailSequenceTemplate::create(array_merge($data, ['created_by' => $request->user()->id, 'updated_by' => $request->user()->id]));
+        return view('administrator.email.sequences.form');
+    }
 
-        return redirect()->route('email.sequences')->with('status', 'Sequence created.');
+    public function storeSequence(EmailSequenceRequest $request)
+    {
+        $sequence = EmailSequenceTemplate::create(array_merge($request->validated(), [
+            'status' => 'draft',
+            'created_by' => $request->user()->id,
+            'updated_by' => $request->user()->id,
+        ]));
+        $this->audit('sequence.created', $sequence, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence created. Add the first step before publishing it.');
+    }
+
+    public function showSequence(int $id)
+    {
+        $sequence = EmailSequenceTemplate::query()->with('steps.template')->findOrFail($id);
+        $nextStepNumber = ((int) $sequence->steps->max('step_number')) + 1;
+
+        return view('administrator.email.sequences.show', [
+            'sequence' => $sequence,
+            'templates' => EmailTemplate::query()->where('status', 'published')->orderBy('name')->get(),
+            'nextStepNumber' => max(1, $nextStepNumber),
+        ]);
+    }
+
+    public function updateSequence(EmailSequenceRequest $request, int $id)
+    {
+        $sequence = EmailSequenceTemplate::findOrFail($id);
+        $data = $request->validated();
+        if (($data['status'] ?? $sequence->status) === 'published' && ! $sequence->steps()->exists()) {
+            return redirect()->back()->withErrors(['status' => 'Add at least one step before publishing this sequence.'])->withInput();
+        }
+
+        $sequence->update(array_merge($data, ['updated_by' => $request->user()->id]));
+        $this->audit('sequence.updated', $sequence, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence settings saved.');
     }
 
     public function storeSequenceStep(EmailSequenceStepRequest $request, int $id)
     {
         $sequence = EmailSequenceTemplate::findOrFail($id);
-        $sequence->steps()->updateOrCreate(['step_number' => $request->validated('step_number')], $request->validated());
+        $data = $request->validated();
+        if ($sequence->steps()->where('step_number', $data['step_number'])->exists()) {
+            return redirect()->back()->withErrors(['step_number' => 'This step number already exists.'])->withInput();
+        }
 
-        return redirect()->route('email.sequences')->with('status', 'Sequence step saved.');
+        $step = $sequence->steps()->create($data);
+        $this->audit('sequence.step.created', $step, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence step added.');
+    }
+
+    public function updateSequenceStep(EmailSequenceStepRequest $request, int $id, int $stepId)
+    {
+        $sequence = EmailSequenceTemplate::findOrFail($id);
+        $step = $sequence->steps()->findOrFail($stepId);
+        $data = $request->validated();
+        $data['step_number'] = $step->step_number;
+        $step->update($data);
+        $this->audit('sequence.step.updated', $step, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence step updated.');
+    }
+
+    public function destroySequenceStep(Request $request, int $id, int $stepId)
+    {
+        abort_unless($request->user()->hasCrmPermission('email.sequence.manage'), 403);
+        $sequence = EmailSequenceTemplate::findOrFail($id);
+        $step = $sequence->steps()->findOrFail($stepId);
+        if (EmailEnrollment::query()->where('email_sequence_template_id', $sequence->id)->where('status', 'active')->exists()) {
+            return redirect()->back()->withErrors(['steps' => 'Pause or complete active enrollments before removing a step.']);
+        }
+
+        $removedStepNumber = $step->step_number;
+        $step->delete();
+        $sequence->steps()->where('step_number', '>', $removedStepNumber)->orderBy('step_number')->each(function ($remainingStep) {
+            $remainingStep->update(['step_number' => $remainingStep->step_number - 1]);
+        });
+        $this->audit('sequence.step.deleted', $step, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence step removed.');
     }
 
     public function enrollments()
