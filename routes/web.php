@@ -77,6 +77,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('/sequences/{id}/steps/{stepId}', [EmailManagementController::class, 'destroySequenceStep'])->middleware('permission:email.sequence.manage')->name('sequences.steps.destroy');
         Route::get('/enrollments', [EmailManagementController::class, 'enrollments'])->middleware('permission:email.view')->name('enrollments');
         Route::post('/enrollments', [EmailManagementController::class, 'enroll'])->middleware('permission:email.sequence.manage')->name('enrollments.store');
+        Route::delete('/enrollments/{id}', [EmailManagementController::class, 'destroyEnrollment'])->middleware('permission:email.sequence.manage')->name('enrollments.destroy');
         Route::get('/logs', [EmailManagementController::class, 'logs'])->middleware('permission:email.view')->name('logs');
     });
     Route::get('/users', [UserController::class, 'index'])->name('users.index');

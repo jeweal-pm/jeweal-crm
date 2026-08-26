@@ -350,6 +350,23 @@ class EmailManagementController extends Controller
         return redirect()->route('email.enrollments')->with('status', 'Subscriber enrolled.');
     }
 
+    public function destroyEnrollment(Request $request, int $id)
+    {
+        abort_unless($request->user()->hasCrmPermission('email.sequence.manage'), 403);
+        $enrollment = EmailEnrollment::findOrFail($id);
+
+        DB::transaction(function () use ($enrollment, $request) {
+            EmailMessage::query()
+                ->where('email_enrollment_id', $enrollment->id)
+                ->whereIn('status', ['queued', 'deferred', 'processing'])
+                ->update(['status' => 'suppressed', 'failure_reason' => 'Sequence enrollment removed', 'updated_at' => now()]);
+            $enrollment->delete();
+            $this->audit('sequence.enrollment.deleted', $enrollment, $request);
+        });
+
+        return redirect()->route('email.enrollments')->with('status', 'Enrollment removed and pending messages suppressed.');
+    }
+
     public function logs()
     {
         return view('administrator.email.logs.index', ['messages' => EmailMessage::with('subscriber')->latest()->paginate(30)]);

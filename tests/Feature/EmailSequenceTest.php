@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -92,6 +93,25 @@ class EmailSequenceTest extends TestCase
 
         $this->assertDatabaseMissing('email_messages', ['email_enrollment_id' => $enrollment->id]);
         $this->assertDatabaseHas('email_enrollments', ['id' => $enrollment->id, 'status' => 'active', 'current_step' => 1]);
+    }
+
+    public function test_root_can_remove_an_enrollment_and_suppress_pending_messages(): void
+    {
+        $user = $this->rootUser();
+        $sequence = EmailSequenceTemplate::create(['name' => 'Remove enrollment', 'code' => 'remove-enrollment', 'status' => 'published']);
+        $subscriber = EmailSubscriber::create(['email' => 'remove@example.com', 'subscription_status' => 'subscribed', 'unsubscribe_token_hash' => hash('sha256', 'remove')]);
+        $enrollment = EmailEnrollment::create(['email_subscriber_id' => $subscriber->id, 'email_sequence_template_id' => $sequence->id, 'status' => 'active', 'enrolled_at' => now(), 'next_scheduled_at' => now()]);
+        $message = \App\Models\EmailMessage::create([
+            'message_id' => (string) Str::uuid(), 'idempotency_key' => 'remove-enrollment-message',
+            'email_subscriber_id' => $subscriber->id, 'email_enrollment_id' => $enrollment->id,
+            'message_type' => 'marketing', 'to_email' => $subscriber->email, 'subject' => 'Pending',
+            'html_content' => '<p>Pending</p>', 'status' => 'queued', 'queued_at' => now(),
+        ]);
+
+        $this->actingAs($user)->delete(route('email.enrollments.destroy', $enrollment->id))->assertRedirect(route('email.enrollments'));
+
+        $this->assertDatabaseMissing('email_enrollments', ['id' => $enrollment->id]);
+        $this->assertDatabaseHas('email_messages', ['id' => $message->id, 'status' => 'suppressed', 'failure_reason' => 'Sequence enrollment removed']);
     }
 
     private function rootUser()
