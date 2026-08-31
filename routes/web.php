@@ -1,14 +1,22 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\LoginController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\EnquiriesController;
-use App\Http\Controllers\GisEnquiriesController;
-use App\Http\Controllers\GmsStoneEnquiriesController;
+use App\Http\Controllers\EmailManagementController;
 use App\Http\Controllers\EmailSubscriptionController;
 use App\Http\Controllers\EmailTrackingController;
-use App\Http\Controllers\EmailManagementController;
+use App\Http\Controllers\EnquiriesController;
+use App\Http\Controllers\GisEnquiriesController;
+use App\Http\Controllers\GisFairCampaignController;
+use App\Http\Controllers\GisFairLeadAdminController;
+use App\Http\Controllers\GisFairRedirectController;
+use App\Http\Controllers\GisFairTrackingLinkController;
+use App\Http\Controllers\GmsStoneEnquiriesController;
+use App\Http\Controllers\IpSecurityController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\TwilioConfigurationController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\WhatsappMessageAdminController;
+use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -24,6 +32,11 @@ Route::get('/', function () {
     return abort(404);
 });
 
+Route::get('/r/{code}', GisFairRedirectController::class)
+    ->where('code', '[A-Za-z0-9_-]+')
+    ->middleware('throttle:120,1')
+    ->name('gis-fair.redirect');
+
 Route::middleware('throttle:120,1')->group(function () {
     Route::get('/email-track/open/{messageId}', [EmailTrackingController::class, 'open'])->name('email.track.open');
     Route::get('/email-track/click/{messageId}', [EmailTrackingController::class, 'click'])->name('email.track.click');
@@ -31,20 +44,36 @@ Route::middleware('throttle:120,1')->group(function () {
     Route::post('/unsubscribe/{token}', [EmailSubscriptionController::class, 'unsubscribe']);
 });
 
-
-
 Route::get('/crm-login-system', function () {
     return view('administrator.login');
 });
 
-
-
 Route::middleware('guest')->group(function () {
     Route::post('/crm-login-system', [LoginController::class, 'authenticate'])->name('login');
-
 });
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
+    Route::prefix('gis-fair')->name('gis-fair.')->group(function () {
+        Route::get('/leads', [GisFairLeadAdminController::class, 'index'])->name('leads.index');
+        Route::get('/leads/{lead}', [GisFairLeadAdminController::class, 'show'])->name('leads.show');
+        Route::post('/leads/{lead}/assign', [GisFairLeadAdminController::class, 'assign'])->name('leads.assign');
+        Route::patch('/leads/{lead}/status', [GisFairLeadAdminController::class, 'updateStatus'])->name('leads.status');
+        Route::post('/leads/{lead}/resend', [GisFairLeadAdminController::class, 'resend'])->name('leads.resend');
+        Route::post('/leads/{lead}/withdraw-marketing', [GisFairLeadAdminController::class, 'withdrawMarketing'])->name('leads.withdraw-marketing');
+        Route::delete('/leads/{lead}', [GisFairLeadAdminController::class, 'destroy'])->name('leads.destroy');
+        Route::post('/leads/{lead}/restore', [GisFairLeadAdminController::class, 'restore'])->name('leads.restore');
+
+        Route::get('/campaigns', [GisFairCampaignController::class, 'index'])->name('campaigns.index');
+        Route::get('/campaigns/create', [GisFairCampaignController::class, 'create'])->name('campaigns.create');
+        Route::post('/campaigns', [GisFairCampaignController::class, 'store'])->name('campaigns.store');
+        Route::get('/campaigns/{campaign}', [GisFairCampaignController::class, 'show'])->name('campaigns.show');
+        Route::get('/campaigns/{campaign}/edit', [GisFairCampaignController::class, 'edit'])->name('campaigns.edit');
+        Route::put('/campaigns/{campaign}', [GisFairCampaignController::class, 'update'])->name('campaigns.update');
+        Route::delete('/campaigns/{campaign}', [GisFairCampaignController::class, 'destroy'])->name('campaigns.destroy');
+        Route::post('/campaigns/{campaign}/links', [GisFairTrackingLinkController::class, 'store'])->name('links.store');
+        Route::put('/campaigns/{campaign}/links/{link}', [GisFairTrackingLinkController::class, 'update'])->name('links.update');
+        Route::delete('/campaigns/{campaign}/links/{link}', [GisFairTrackingLinkController::class, 'destroy'])->name('links.destroy');
+    });
     Route::prefix('email')->name('email.')->group(function () {
         Route::get('/', [EmailManagementController::class, 'dashboard'])->middleware('permission:email.view')->name('dashboard');
         Route::get('/templates', [EmailManagementController::class, 'templates'])->middleware('permission:email.view')->name('templates');
@@ -83,6 +112,28 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::get('/add-user', [UserController::class, 'create'])->name('users.create');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
+        Route::get('/messages', [WhatsappMessageAdminController::class, 'index'])
+            ->middleware('permission:whatsapp.view')->name('messages.index');
+        Route::post('/messages/{id}/retry', [WhatsappMessageAdminController::class, 'retry'])
+            ->middleware('permission:whatsapp.message.manage')->name('messages.retry');
+        Route::delete('/messages/{id}', [WhatsappMessageAdminController::class, 'destroy'])
+            ->middleware('permission:whatsapp.message.manage')->name('messages.destroy');
+        Route::get('/config', [TwilioConfigurationController::class, 'edit'])
+            ->middleware('permission:whatsapp.config.manage')->name('config.edit');
+        Route::put('/config', [TwilioConfigurationController::class, 'update'])
+            ->middleware('permission:whatsapp.config.manage')->name('config.update');
+    });
+    Route::prefix('security/ip-controls')->name('security.ip.')->group(function () {
+        Route::get('/', [IpSecurityController::class, 'index'])
+            ->middleware('permission:security.ip.view')->name('index');
+        Route::post('/blacklist', [IpSecurityController::class, 'storeBlacklist'])
+            ->middleware('permission:security.ip.manage')->name('blacklist.store');
+        Route::delete('/blacklist/{id}', [IpSecurityController::class, 'destroyBlacklist'])
+            ->middleware('permission:security.ip.manage')->name('blacklist.destroy');
+        Route::put('/rate-limits/{id}', [IpSecurityController::class, 'updateRateLimit'])
+            ->middleware('permission:security.ip.manage')->name('rate-limits.update');
+    });
     Route::get('/enquiry', [EnquiriesController::class, 'index'])->name('enquiry.index');
     Route::get('/gis-enquiry', [GisEnquiriesController::class, 'index'])->name('gisEnquiry');
     Route::get('/gms-enquiry', [GmsStoneEnquiriesController::class, 'index'])->name('gms-enquiries.index');
@@ -148,8 +199,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->middleware('permission:enquiry.restore')
         ->name('gis-enquiries.spam-status');
 
-
     Route::get('logout', [LoginController::class, 'destroy'])
                 ->name('logout');
-
 });

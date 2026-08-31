@@ -131,19 +131,21 @@
             <div class="table-responsive">
                 <table class="table table-hover crm-table">
                     <colgroup>
-                        <col style="width: 20%">
-                        <col style="width: 17%">
-                        <col style="width: 15%">
-                        <col style="width: 12%">
-                        <col style="width: 12%">
-                        <col style="width: 10%">
                         <col style="width: 14%">
+                        <col style="width: 16%">
+                        <col style="width: 12%">
+                        <col style="width: 18%">
+                        <col style="width: 10%">
+                        <col style="width: 11%">
+                        <col style="width: 8%">
+                        <col style="width: 11%">
                     </colgroup>
                     <thead>
                     <tr>
                         <th>Lead</th>
                         <th>Contact</th>
                         <th>Inquiry</th>
+                        <th>Message</th>
                         <th>Status</th>
                         <th>Assignee</th>
                         <th>Created</th>
@@ -159,7 +161,6 @@
                         <tr>
                             <td>
                                 <div class="crm-primary">{{ trim($row->first_name.' '.$row->last_name) }}</div>
-                                <div class="crm-muted">{{ \Illuminate\Support\Str::limit($row->message, 86) }}</div>
                             </td>
                             <td>
                                 <div class="crm-email-line">
@@ -173,6 +174,9 @@
                                 <a href="tel:{{ $row->phone_number }}">{{ $row->phone_number }}</a>
                             </td>
                             <td>{{ $row->inquiry }}</td>
+                            <td class="crm-muted" title="{{ $row->message }}">
+                                {{ \Illuminate\Support\Str::limit($row->message, 120) ?: '-' }}
+                            </td>
                             <td>
                                 <span class="crm-status crm-status-{{ $row->trashed() ? 'deleted' : $row->status }}">
                                     {{ $row->trashed() ? 'Deleted' : ($statusOptions[$row->status] ?? $row->status) }}
@@ -287,7 +291,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="crm-empty">No GIS enquiries found.</td>
+                            <td colspan="8" class="crm-empty">No GIS enquiries found.</td>
                         </tr>
                     @endforelse
                     </tbody>

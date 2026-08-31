@@ -11,6 +11,9 @@ class EmailSenderResolver
         }
 
         $type = in_array($enquiryType, ['general', 'gis', 'gms'], true) ? $enquiryType : 'general';
+        if ($enquiryType === 'gis_fair') {
+            $type = 'gis';
+        }
 
         return config('email_management.sender_addresses.'.$type)
             ?: config('mail.from.address');

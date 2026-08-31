@@ -15,7 +15,7 @@ class EmailTestSendRequest extends FormRequest
     {
         return [
             'email' => ['required', 'email', 'max:255'],
-            'enquiry_type' => ['nullable', 'in:general,gis,gms'],
+            'enquiry_type' => ['nullable', 'in:general,gis,gms,gis_fair'],
         ];
     }
 }

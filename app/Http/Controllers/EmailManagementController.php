@@ -103,6 +103,10 @@ class EmailManagementController extends Controller
             'company_name' => 'Demo Company', 'enquiry_number' => 'DEMO-001', 'enquiry_type' => 'general',
             'submitted_at' => now()->format('Y-m-d H:i'), 'sales_owner_name' => 'Sales Team',
             'unsubscribe_url' => url('/unsubscribe/demo-token'), 'country' => 'Thailand', 'phone' => '+66 00 000 0000',
+            'fair_code' => 'GIS74-DEMO01', 'event_name' => 'Bangkok Gems & Jewelry Fair',
+            'event_code' => 'bgjf-74', 'event_dates' => '10-14 September 2026',
+            'event_hall' => 'X', 'event_booth' => 'A00', 'business_type' => 'Retail',
+            'stores' => 3, 'current_system' => 'None', 'interests' => 'POS, Inventory',
         ]);
 
         return view('administrator.email.templates.preview', compact('template', 'rendered'));
@@ -115,7 +119,14 @@ class EmailManagementController extends Controller
         }
         $template = EmailTemplate::findOrFail($id);
         $senderEmail = $senders->resolve($request->validated('enquiry_type'), $template->sender_email);
-        $rendered = $renderer->render($template, ['first_name' => 'Test', 'email' => $request->validated('email'), 'enquiry_number' => 'TEST-001', 'unsubscribe_url' => url('/unsubscribe/test-token')]);
+        $rendered = $renderer->render($template, [
+            'first_name' => 'Test', 'last_name' => 'Recipient', 'email' => $request->validated('email'),
+            'enquiry_number' => 'TEST-001', 'unsubscribe_url' => url('/unsubscribe/test-token'),
+            'fair_code' => 'GIS74-TEST01', 'event_name' => 'Bangkok Gems & Jewelry Fair',
+            'event_dates' => '10-14 September 2026', 'event_hall' => 'X', 'event_booth' => 'A00',
+            'company' => 'Test Company', 'phone' => '+66 00 000 0000', 'business_type' => 'Retail',
+            'stores' => 3, 'interests' => 'POS, Inventory',
+        ]);
         Mail::to($request->validated('email'))->send(new ManagedEmailMailable($rendered['html_content'], $rendered['plain_text_content'], '[TEST] '.$rendered['subject'], $senderEmail, $template->sender_name, $template->reply_to_email));
 
         return redirect()->back()->with('status', 'Test email sent.');
@@ -170,7 +181,7 @@ class EmailManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'], 'code' => ['required', 'alpha_dash', 'max:100'],
             'segment_type' => ['required', 'in:dynamic,static'], 'subscription_status' => ['nullable', 'string'],
-            'source_type' => ['nullable', 'in:general,gis,gms'], 'customer_status' => ['nullable', 'in:lead_mql,sql,prospect,customer'],
+            'source_type' => ['nullable', 'in:general,gis,gms,gis_fair'], 'customer_status' => ['nullable', 'in:lead_mql,sql,prospect,customer'],
             'created_after_days' => ['nullable', 'integer', 'min:1'],
         ]);
         $conditions = array_filter(Arr::only($data, ['subscription_status', 'source_type', 'customer_status', 'created_after_days']), fn ($value) => $value !== null && $value !== '');

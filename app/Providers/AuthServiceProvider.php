@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Enquiry;
 use App\Models\GisEnquiry;
+use App\Models\GisFairLead;
 use App\Models\GmsStoneEnquiry;
 use App\Policies\EnquiryPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -20,6 +21,7 @@ class AuthServiceProvider extends ServiceProvider
         Enquiry::class => EnquiryPolicy::class,
         GisEnquiry::class => EnquiryPolicy::class,
         GmsStoneEnquiry::class => EnquiryPolicy::class,
+        GisFairLead::class => EnquiryPolicy::class,
     ];
 
     /**

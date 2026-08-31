@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Enquiry;
 use App\Models\GisEnquiry;
+use App\Models\GisFairLead;
 use App\Models\GmsStoneEnquiry;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -35,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
             'enquiry' => Enquiry::class,
             'gis_enquiry' => GisEnquiry::class,
             'gms_stone_enquiry' => GmsStoneEnquiry::class,
+            'gis_fair_lead' => GisFairLead::class,
             'user' => User::class,
         ]);
     }

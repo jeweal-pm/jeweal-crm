@@ -131,6 +131,7 @@ class GmsStoneEnquiryTest extends TestCase
             'terms_conditions_accepted' => true,
         ])
             ->assertCreated()
+            ->assertJsonPath('success', true)
             ->assertJsonPath('status', 'complete')
             ->assertJsonPath('data.email', 'external@example.com')
             ->assertJsonPath('data.privacy_policy_accepted', true)
@@ -147,8 +148,8 @@ class GmsStoneEnquiryTest extends TestCase
     {
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.20'])
             ->post('/api/gms-stone-enquiry', [
-            'full_name' => 'External Submitter',
-        ])
+                'full_name' => 'External Submitter',
+            ])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['email', 'phone_number', 'country_code', 'account_type']);
     }
@@ -171,8 +172,8 @@ class GmsStoneEnquiryTest extends TestCase
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.30'])
             ->post('/api/gms-stone-enquiry', array_merge($payload, [
-            'email' => 'cooldown-second@example.com',
-        ]))
+                'email' => 'cooldown-second@example.com',
+            ]))
             ->assertStatus(429)
             ->assertJsonPath('error', 'กรุณารอ 10 วินาที แล้วส่งอีกครั้ง');
     }

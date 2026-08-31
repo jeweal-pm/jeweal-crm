@@ -35,6 +35,13 @@ class RolePermissionSeeder extends Seeder
         'email.config.manage',
         'email.analytics.view',
         'email.export',
+        'whatsapp.view',
+        'whatsapp.message.manage',
+        'whatsapp.config.manage',
+        'security.ip.view',
+        'security.ip.manage',
+        'funnel.config.manage',
+        'funnel.message.manage',
     ];
 
     private array $matrix = [
@@ -56,6 +63,9 @@ class RolePermissionSeeder extends Seeder
             'email.view', 'email.template.manage', 'email.template.publish', 'email.campaign.manage',
             'email.campaign.approve', 'email.campaign.send', 'email.sequence.manage', 'email.segment.manage',
             'email.config.manage', 'email.analytics.view', 'email.export',
+            'whatsapp.view', 'whatsapp.message.manage', 'whatsapp.config.manage',
+            'security.ip.view', 'security.ip.manage',
+            'funnel.config.manage', 'funnel.message.manage',
         ],
         'ceo' => [
             'enquiry.view.all',
@@ -75,6 +85,9 @@ class RolePermissionSeeder extends Seeder
             'email.view', 'email.template.manage', 'email.template.publish', 'email.campaign.manage',
             'email.campaign.approve', 'email.campaign.send', 'email.sequence.manage', 'email.segment.manage',
             'email.config.manage', 'email.analytics.view', 'email.export',
+            'whatsapp.view', 'whatsapp.message.manage', 'whatsapp.config.manage',
+            'security.ip.view', 'security.ip.manage',
+            'funnel.config.manage', 'funnel.message.manage',
         ],
         'general_manager' => [
             'enquiry.view.all',
@@ -94,12 +107,16 @@ class RolePermissionSeeder extends Seeder
             'email.view', 'email.template.manage', 'email.template.publish', 'email.campaign.manage',
             'email.campaign.approve', 'email.campaign.send', 'email.sequence.manage', 'email.segment.manage',
             'email.config.manage', 'email.analytics.view', 'email.export',
+            'whatsapp.view', 'whatsapp.message.manage', 'whatsapp.config.manage',
+            'security.ip.view', 'security.ip.manage',
+            'funnel.config.manage', 'funnel.message.manage',
         ],
         'admin' => [
             'enquiry.view.all',
             'enquiry.view.assigned',
             'enquiry.filter',
             'email.view', 'email.analytics.view',
+            'whatsapp.view', 'security.ip.view',
         ],
         'sale_manager' => [
             'enquiry.view.all',
@@ -109,11 +126,13 @@ class RolePermissionSeeder extends Seeder
             'enquiry.update_status',
             'enquiry.delete',
             'enquiry.bulk_delete',
+            'funnel.message.manage',
         ],
         'sale' => [
             'enquiry.view.assigned',
             'enquiry.filter',
             'enquiry.update_status',
+            'funnel.message.manage',
         ],
     ];
 

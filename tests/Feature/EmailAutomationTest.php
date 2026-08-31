@@ -25,7 +25,7 @@ class EmailAutomationTest extends TestCase
             'name' => 'Automation Lead', 'business_type' => ['retail'], 'email' => 'automation@example.com',
             'country' => 'Thailand', 'phone' => '+66810000000', 'company' => 'Automation Co',
             'company_website' => 'https://example.com', 'description' => 'Need a demo', 'interest_in' => ['crm'],
-        ])->assertCreated();
+        ])->assertCreated()->assertJsonPath('success', true);
 
         $subscriber = EmailSubscriber::where('email', 'automation@example.com')->firstOrFail();
         $this->assertSame('pending_confirmation', $subscriber->subscription_status);
@@ -92,7 +92,7 @@ class EmailAutomationTest extends TestCase
             ->postJson('/api/gis-enquiry', [
                 'first_name' => 'GIS', 'last_name' => 'Requester', 'email' => 'gis-requester@example.com',
                 'phone_number' => '+66810000000', 'inquiry' => 'Request quotation', 'message' => 'Please contact me.',
-            ])->assertCreated();
+            ])->assertCreated()->assertJsonPath('success', true);
 
         $this->assertDatabaseCount('email_messages', 2);
         $this->assertDatabaseHas('email_messages', ['message_type' => 'transactional', 'to_email' => 'gis-requester@example.com']);
