@@ -29,6 +29,12 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('gis-fair.leads.index') }}" class="crm-sidebar-link {{ request()->routeIs('gis-fair.*') ? 'crm-active' : '' }}">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>GIS Fair Funnel</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('gms-enquiries.index') }}" class="crm-sidebar-link {{ request()->routeIs('gms-enquiries.*') ? 'crm-active' : '' }}">
                     <i class="fas fa-gem"></i>
                     <span>GMS Enquiries</span>
@@ -42,17 +48,35 @@
                     </a>
                 </li>
             @endif
-        </ul>
-
-        @if(Auth::user()->hasCrmPermission('user.view'))
-            <div class="crm-sidebar-section">Administration</div>
-            <ul class="crm-sidebar-nav">
+            @if(Auth::user()->hasCrmPermission('whatsapp.view'))
                 <li>
-                    <a href="{{ route('users.index') }}" class="crm-sidebar-link {{ request()->routeIs('users.*') ? 'crm-active' : '' }}">
-                        <i class="fas fa-users-cog"></i>
-                        <span>User Management</span>
+                    <a href="{{ route('whatsapp.messages.index') }}" class="crm-sidebar-link {{ request()->routeIs('whatsapp.*') ? 'crm-active' : '' }}">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp Delivery</span>
                     </a>
                 </li>
+            @endif
+        </ul>
+
+        @if(Auth::user()->hasCrmPermission('user.view') || Auth::user()->hasCrmPermission('security.ip.view'))
+            <div class="crm-sidebar-section">Administration</div>
+            <ul class="crm-sidebar-nav">
+                @if(Auth::user()->hasCrmPermission('user.view'))
+                    <li>
+                        <a href="{{ route('users.index') }}" class="crm-sidebar-link {{ request()->routeIs('users.*') ? 'crm-active' : '' }}">
+                            <i class="fas fa-users-cog"></i>
+                            <span>User Management</span>
+                        </a>
+                    </li>
+                @endif
+                @if(Auth::user()->hasCrmPermission('security.ip.view'))
+                    <li>
+                        <a href="{{ route('security.ip.index') }}" class="crm-sidebar-link {{ request()->routeIs('security.ip.*') ? 'crm-active' : '' }}">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>IP Security</span>
+                        </a>
+                    </li>
+                @endif
             </ul>
         @endif
 

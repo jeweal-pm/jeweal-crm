@@ -1,47 +1,38 @@
 services:
-  app:
-    image: webdevops/php-apache:8.0
-    container_name: jeweal-crm-app
-    working_dir: /app
-    ports:
-      - "8000:80"
-    volumes:
-      - ./:/app
+  db:
+    image: mariadb:10.4.32
+    container_name: jeweal-crm-db
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=64M
     environment:
-      WEB_DOCUMENT_ROOT: /app/public
-      PHP_MEMORY_LIMIT: 512M
-      DB_CONNECTION: mysql
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: laravel
-      DB_USERNAME: root
-      DB_PASSWORD: root
-    depends_on:
-      - mysql
-
-  mysql:
-    image: mysql:8.0
-    container_name: jeweal-crm-mysql
+      MARIADB_DATABASE: jeweal_crm
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "yes"
     ports:
-      - "3306:3306"
-    environment:
-      MYSQL_DATABASE: laravel
-      MYSQL_ROOT_PASSWORD: root
+      - "127.0.0.1:3307:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mariadb_data:/var/lib/mysql
+      - ./db_import:/imports:ro
+      - ./docker/mariadb/import-tables.sh:/usr/local/bin/import-tables:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   phpmyadmin:
-    image: phpmyadmin:5-apache
+    image: phpmyadmin:5.2-apache
     container_name: jeweal-crm-phpmyadmin
-    ports:
-      - "8080:80"
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
-      PMA_HOST: mysql
+      PMA_HOST: db
       PMA_PORT: 3306
       PMA_USER: root
-      PMA_PASSWORD: root
-    depends_on:
-      - mysql
+      PMA_PASSWORD: ""
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./docker/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
 
 volumes:
-  mysql_data:
+  mariadb_data:

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+
 class DatabaseSeeder extends Seeder
 {
     /**
@@ -15,5 +16,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RolePermissionSeeder::class);
         $this->call(EmailManagementSeeder::class);
+        $this->call(CommunicationSecuritySeeder::class);
+        $this->call(GisFairFunnelSeeder::class);
     }
 }

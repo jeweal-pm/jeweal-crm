@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('email:process-automation')->everyMinute()->withoutOverlapping();
+        $schedule->command('whatsapp:process-waiting')->everyMinute()->withoutOverlapping();
     }
 
     /**

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -70,11 +71,15 @@ class User extends Authenticatable
 
     public function hasCrmPermission(string $permission): bool
     {
-        if ($this->can($permission)) {
-            return true;
-        }
+        try {
+            if ($this->can($permission)) {
+                return true;
+            }
 
-        return (bool) $this->primaryRole?->hasPermissionTo($permission);
+            return (bool) $this->primaryRole?->hasPermissionTo($permission);
+        } catch (PermissionDoesNotExist) {
+            return false;
+        }
     }
 
     public function syncPrimaryRole(string $roleName): void
