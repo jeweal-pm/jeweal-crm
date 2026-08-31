@@ -135,7 +135,7 @@ class GisFairLeadService
                 'first_name' => $data['firstName'],
                 'last_name' => $data['lastName'],
                 'email' => $data['email'],
-                'company' => $data['company'],
+                'company' => $data['company'] ?? '',
                 'business_type' => $data['businessType'],
                 'stores' => $data['stores'],
                 'country' => $data['country'],

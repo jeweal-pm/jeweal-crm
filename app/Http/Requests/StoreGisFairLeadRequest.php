@@ -23,7 +23,7 @@ class StoreGisFairLeadRequest extends FormRequest
             'firstName' => ['required', 'string', 'max:50'],
             'lastName' => ['required', 'string', 'max:50'],
             'email' => ['required', 'email:rfc', 'max:100'],
-            'company' => ['required', 'string', 'max:150'],
+            'company' => ['nullable', 'string', 'max:150'],
             'businessType' => ['required', Rule::in(config('gis_fair.business_types'))],
             'stores' => ['required', 'integer', 'min:1', 'max:100000'],
             'phoneIso' => ['required', 'string', 'size:2', Rule::in(array_keys(config('gis_fair.countries')))],
