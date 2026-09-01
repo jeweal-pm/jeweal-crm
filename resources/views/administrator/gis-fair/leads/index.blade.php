@@ -4,9 +4,17 @@
 
 @section('head')
     @include('administrator.gis-fair.partials.styles')
+    @include('administrator.enquiry.partials.bulk-action-styles')
 @endsection
 
 @section('content')
+@php
+    $bulkFormId = 'gis-fair-lead-bulk-actions';
+    $bulkEnabled = auth()->user()->hasCrmPermission('enquiry.bulk_delete')
+        || auth()->user()->hasCrmPermission('enquiry.restore')
+        || auth()->user()->hasCrmPermission('enquiry.update_status')
+        || $assignableUsers->isNotEmpty();
+@endphp
 <section class="funnel-page">
     <header class="funnel-heading">
         <div>
@@ -41,16 +49,23 @@
             <div class="funnel-inline"><button class="btn btn-primary" type="submit" title="Apply filters"><i class="fas fa-search"></i></button><a class="btn btn-outline-secondary" href="{{ route('gis-fair.leads.index') }}" title="Clear filters"><i class="fas fa-times"></i></a></div>
         </form>
 
+        @if($bulkEnabled)
+            @include('administrator.enquiry.partials.bulk-actions', [
+                'bulkActionRoute' => route('gis-fair.leads.bulk-action'),
+            ])
+        @endif
+
         <div class="funnel-table-wrap">
             <table class="table table-hover funnel-table">
-                <thead><tr><th>Lead</th><th>Event / source</th><th>Fair code</th><th>Business</th><th>Status</th><th>Assignee</th><th>Consent</th><th>Submitted</th><th>Actions</th></tr></thead>
+                <thead><tr>@if($bulkEnabled)<th class="crm-select-cell"><input class="crm-select-checkbox" type="checkbox" data-bulk-select-all="{{ $bulkFormId }}" aria-label="Select all GIS fair leads on this page"></th>@endif<th>Lead</th><th>Event / source</th><th>Fair code</th><th>Business</th><th>Status</th><th>Assignee</th><th>Consent</th><th>Submitted</th><th>Actions</th></tr></thead>
                 <tbody>
                 @forelse($leads as $lead)
                     <tr>
+                        @if($bulkEnabled)<td class="crm-select-cell"><input class="crm-select-checkbox" type="checkbox" name="ids[]" value="{{ $lead->id }}" form="{{ $bulkFormId }}" data-bulk-item aria-label="Select GIS fair lead {{ $lead->first_name }} {{ $lead->last_name }}"></td>@endif
                         <td><strong>{{ $lead->first_name }} {{ $lead->last_name }}</strong><div class="funnel-meta">{{ $lead->email }}</div><div class="funnel-meta">{{ $lead->phone_e164 }}</div></td>
                         <td><strong>{{ $lead->campaign->name }}</strong><div class="funnel-meta">{{ $lead->trackingLink?->name ?: 'Direct' }} / {{ $lead->source }}</div></td>
                         <td><span class="funnel-code">{{ $lead->fair_code }}</span><div class="funnel-meta">{{ $lead->submission_count }} submission{{ $lead->submission_count === 1 ? '' : 's' }}</div></td>
-                        <td><strong>{{ $lead->company }}</strong><div class="funnel-meta">{{ $lead->business_type }} / {{ number_format($lead->stores) }} stores</div></td>
+                        <td><strong>{{ $lead->company ?: 'Not provided' }}</strong><div class="funnel-meta">{{ $lead->business_type }} / {{ number_format($lead->stores) }} stores</div></td>
                         <td>
                             @if(!$lead->trashed() && auth()->user()->hasCrmPermission('enquiry.update_status'))
                                 <form class="funnel-inline" method="post" action="{{ route('gis-fair.leads.status', $lead) }}">@csrf @method('patch')<select class="form-control form-control-sm" name="status">@foreach($statusOptions as $value => $label)<option value="{{ $value }}" @selected($lead->status === $value)>{{ $label }}</option>@endforeach</select><button class="btn btn-sm btn-outline-success" type="submit" title="Save status"><i class="fas fa-check"></i></button></form>
@@ -73,13 +88,13 @@
                                 @if($lead->trashed() && auth()->user()->hasCrmPermission('enquiry.restore'))
                                     <form method="post" action="{{ route('gis-fair.leads.restore', $lead->id) }}">@csrf<button class="btn btn-sm btn-outline-success" type="submit" title="Restore lead"><i class="fas fa-undo"></i></button></form>
                                 @elseif(!$lead->trashed() && auth()->user()->hasCrmPermission('enquiry.delete'))
-                                    <form method="post" action="{{ route('gis-fair.leads.destroy', $lead) }}" onsubmit="return confirm('Move this fair lead to deleted records?');">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete lead"><i class="fas fa-trash"></i></button></form>
+                                    <form method="post" action="{{ route('gis-fair.leads.destroy', $lead) }}" data-confirm="Move this fair lead to deleted records?" data-confirm-title="Delete fair lead" data-confirm-tone="danger" data-confirm-button="Delete">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete lead"><i class="fas fa-trash"></i></button></form>
                                 @endif
                             </div>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="9"><div class="funnel-empty"><i class="fas fa-user-tag"></i>No fair leads match these filters.</div></td></tr>
+                    <tr><td colspan="{{ $bulkEnabled ? 10 : 9 }}"><div class="funnel-empty"><i class="fas fa-user-tag"></i>No fair leads match these filters.</div></td></tr>
                 @endforelse
                 </tbody>
             </table>

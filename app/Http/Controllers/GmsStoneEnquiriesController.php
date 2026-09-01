@@ -3,19 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignEnquiryRequest;
+use App\Http\Requests\BulkEnquiryActionRequest;
 use App\Http\Requests\GmsStoneEnquiryFilterRequest;
-use App\Http\Requests\GmsStoneEnquiryRequest;
 use App\Http\Requests\GmsStoneEnquiryReplyRequest;
+use App\Http\Requests\GmsStoneEnquiryRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Http\Resources\GmsStoneEnquiryResource;
 use App\Mail\GmsStoneEnquiryReply;
 use App\Models\GmsStoneEnquiry;
 use App\Models\User;
+use App\Services\Email\EnquiryEmailAutomationService;
+use App\Services\Enquiry\BulkEnquiryActionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Services\Email\EnquiryEmailAutomationService;
 
 class GmsStoneEnquiriesController extends Controller
 {
@@ -174,6 +176,18 @@ class GmsStoneEnquiriesController extends Controller
         return redirect()
             ->route('gms-enquiries.index')
             ->with('status', 'GMS enquiry moved to deleted records.');
+    }
+
+    public function bulkAction(BulkEnquiryActionRequest $request, BulkEnquiryActionService $service)
+    {
+        $validated = $request->validated();
+        $count = $service->execute(GmsStoneEnquiry::class, $request->user(), $validated);
+
+        if ($this->shouldReturnJson($request)) {
+            return response()->json(['status' => 'complete', 'processed' => $count]);
+        }
+
+        return redirect()->back()->with('status', $service->successMessage($validated['action'], $count));
     }
 
     public function restore(Request $request, int $id)

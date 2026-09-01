@@ -62,6 +62,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/leads/{lead}/withdraw-marketing', [GisFairLeadAdminController::class, 'withdrawMarketing'])->name('leads.withdraw-marketing');
         Route::delete('/leads/{lead}', [GisFairLeadAdminController::class, 'destroy'])->name('leads.destroy');
         Route::post('/leads/{lead}/restore', [GisFairLeadAdminController::class, 'restore'])->name('leads.restore');
+        Route::post('/leads/bulk-actions/apply', [GisFairLeadAdminController::class, 'bulkAction'])->name('leads.bulk-action');
 
         Route::get('/campaigns', [GisFairCampaignController::class, 'index'])->name('campaigns.index');
         Route::get('/campaigns/create', [GisFairCampaignController::class, 'create'])->name('campaigns.create');
@@ -152,6 +153,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::patch('/gms-enquiry/{id}/status', [GmsStoneEnquiriesController::class, 'updateStatus'])
         ->middleware('permission:enquiry.update_status')
         ->name('gms-enquiries.status');
+    Route::post('/gms-enquiry/bulk-actions', [GmsStoneEnquiriesController::class, 'bulkAction'])
+        ->name('gms-enquiries.bulk-action');
 
     Route::post('/enquiries/{id}/assign', [EnquiriesController::class, 'assign'])
         ->middleware('permission:enquiry.assign.to_sale|enquiry.assign.to_sale_manager')
@@ -169,6 +172,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/enquiries/bulk-delete', [EnquiriesController::class, 'bulkDelete'])
         ->middleware('permission:enquiry.bulk_delete')
         ->name('enquiries.bulk-delete');
+    Route::post('/enquiries/bulk-actions', [EnquiriesController::class, 'bulkAction'])
+        ->name('enquiries.bulk-action');
     Route::post('/enquiries/{id}/restore', [EnquiriesController::class, 'restore'])
         ->middleware('permission:enquiry.restore')
         ->name('enquiries.restore');
@@ -192,6 +197,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/gis-enquiries/bulk-delete', [GisEnquiriesController::class, 'bulkDelete'])
         ->middleware('permission:enquiry.bulk_delete')
         ->name('gis-enquiries.bulk-delete');
+    Route::post('/gis-enquiries/bulk-actions', [GisEnquiriesController::class, 'bulkAction'])
+        ->name('gis-enquiries.bulk-action');
     Route::post('/gis-enquiries/{id}/restore', [GisEnquiriesController::class, 'restore'])
         ->middleware('permission:enquiry.restore')
         ->name('gis-enquiries.restore');

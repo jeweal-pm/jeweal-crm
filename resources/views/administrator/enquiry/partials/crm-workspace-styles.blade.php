@@ -366,3 +366,4 @@
         }
     }
 </style>
+@include('administrator.enquiry.partials.bulk-action-styles')

@@ -20,6 +20,7 @@
             </main>
         @endguest
 
+        @include('layouts.partials.confirm-dialog')
         @include('layouts.footer')
     </body>
 </html>

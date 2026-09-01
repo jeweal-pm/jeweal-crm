@@ -63,7 +63,7 @@
                                     <form method="post" action="{{ route('whatsapp.messages.retry', $message->id) }}">@csrf<button class="btn btn-sm btn-outline-primary" type="submit" title="Queue retry"><i class="fas fa-redo"></i></button></form>
                                 @endif
                                 @if(auth()->user()->hasCrmPermission('whatsapp.message.manage'))
-                                    <form method="post" action="{{ route('whatsapp.messages.destroy', $message->id) }}" onsubmit="return confirm('Delete this record and allow the number to be submitted again?');">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete record"><i class="fas fa-trash"></i></button></form>
+                                    <form method="post" action="{{ route('whatsapp.messages.destroy', $message->id) }}" data-confirm="Delete this record and allow the number to be submitted again?" data-confirm-title="Delete WhatsApp record" data-confirm-tone="danger" data-confirm-button="Delete">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Delete record"><i class="fas fa-trash"></i></button></form>
                                 @endif
                             </div>
                         </td>

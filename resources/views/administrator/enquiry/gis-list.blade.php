@@ -6,6 +6,13 @@
 @endsection
 
 @section('content')
+@php
+    $bulkFormId = 'gis-enquiry-bulk-actions';
+    $bulkEnabled = auth()->user()->hasCrmPermission('enquiry.bulk_delete')
+        || auth()->user()->hasCrmPermission('enquiry.restore')
+        || auth()->user()->hasCrmPermission('enquiry.update_status')
+        || $assignableUsers->isNotEmpty();
+@endphp
 <section class="content crm-page">
     <div class="container-fluid">
         <div class="crm-topbar">
@@ -44,6 +51,9 @@
 
         @if(session('status'))
             <div class="alert alert-success">{{ session('status') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger">{{ $errors->first() }}</div>
         @endif
 
         @php
@@ -128,20 +138,32 @@
                 <div class="crm-result-count">{{ number_format($data->total()) }} results</div>
             </div>
 
+            @if($bulkEnabled)
+                @include('administrator.enquiry.partials.bulk-actions', [
+                    'bulkActionRoute' => route('gis-enquiries.bulk-action'),
+                ])
+            @endif
+
             <div class="table-responsive">
                 <table class="table table-hover crm-table">
                     <colgroup>
-                        <col style="width: 14%">
-                        <col style="width: 16%">
-                        <col style="width: 12%">
-                        <col style="width: 18%">
+                        @if($bulkEnabled)<col style="width: 4%">@endif
+                        <col style="width: 13%">
+                        <col style="width: 15%">
+                        <col style="width: 11%">
+                        <col style="width: 17%">
+                        <col style="width: 9%">
                         <col style="width: 10%">
-                        <col style="width: 11%">
-                        <col style="width: 8%">
-                        <col style="width: 11%">
+                        <col style="width: 7%">
+                        <col style="width: 14%">
                     </colgroup>
                     <thead>
                     <tr>
+                        @if($bulkEnabled)
+                            <th class="crm-select-cell">
+                                <input class="crm-select-checkbox" type="checkbox" data-bulk-select-all="{{ $bulkFormId }}" aria-label="Select all GIS enquiries on this page">
+                            </th>
+                        @endif
                         <th>Lead</th>
                         <th>Contact</th>
                         <th>Inquiry</th>
@@ -159,6 +181,11 @@
                             $assigneeInitial = $assigneeName ? \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($assigneeName, 0, 1)) : '-';
                         @endphp
                         <tr>
+                            @if($bulkEnabled)
+                                <td class="crm-select-cell">
+                                    <input class="crm-select-checkbox" type="checkbox" name="ids[]" value="{{ $row->id }}" form="{{ $bulkFormId }}" data-bulk-item aria-label="Select GIS enquiry {{ trim($row->first_name.' '.$row->last_name) }}">
+                                </td>
+                            @endif
                             <td>
                                 <div class="crm-primary">{{ trim($row->first_name.' '.$row->last_name) }}</div>
                             </td>
@@ -238,7 +265,7 @@
                                         @endcan
 
                                         @can('delete', $row)
-                                            <form method="post" action="{{ route('gis-enquiries.destroy', $row->id) }}" class="crm-action-form" onsubmit="return confirm('Soft delete this GIS enquiry?')">
+                                            <form method="post" action="{{ route('gis-enquiries.destroy', $row->id) }}" class="crm-action-form" data-confirm="Move this GIS enquiry to deleted records?" data-confirm-title="Delete GIS enquiry" data-confirm-tone="danger" data-confirm-button="Delete">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn btn-sm btn-outline-danger crm-icon-btn" type="submit" title="Soft delete">
@@ -291,7 +318,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="crm-empty">No GIS enquiries found.</td>
+                            <td colspan="{{ $bulkEnabled ? 9 : 8 }}" class="crm-empty">No GIS enquiries found.</td>
                         </tr>
                     @endforelse
                     </tbody>
