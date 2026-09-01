@@ -4,21 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkDeleteEnquiryRequest;
+use App\Http\Requests\BulkEnquiryActionRequest;
 use App\Http\Requests\EnquiryFilterRequest;
-use App\Http\Requests\EnquiryRequest;
 use App\Http\Requests\EnquiryReplyRequest;
-use App\Http\Requests\UpdateSpamStatusRequest;
+use App\Http\Requests\EnquiryRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
+use App\Http\Requests\UpdateSpamStatusRequest;
 use App\Http\Resources\EnquiryResource;
 use App\Mail\EnquiryReply;
 use App\Models\Enquiry;
 use App\Models\User;
+use App\Services\Email\EnquiryEmailAutomationService;
+use App\Services\Enquiry\BulkEnquiryActionService;
 use App\Services\Spam\EnquirySpamScorer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use App\Services\Email\EnquiryEmailAutomationService;
 
 class EnquiriesController extends Controller
 {
@@ -52,7 +54,6 @@ class EnquiriesController extends Controller
             ],
         ]);
     }
-
 
     /**
      * Show the form for creating a new resource.
@@ -177,6 +178,18 @@ class EnquiriesController extends Controller
         }
 
         return response()->json(['status' => 'complete']);
+    }
+
+    public function bulkAction(BulkEnquiryActionRequest $request, BulkEnquiryActionService $service)
+    {
+        $validated = $request->validated();
+        $count = $service->execute(Enquiry::class, $request->user(), $validated);
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'complete', 'processed' => $count]);
+        }
+
+        return redirect()->back()->with('status', $service->successMessage($validated['action'], $count));
     }
 
     public function restore(Request $request, int $id)

@@ -46,7 +46,7 @@
                             <td>{{ $blocked->reason ?: '-' }}</td>
                             <td>{{ optional($blocked->blocked_until)->format('d M Y H:i') ?: 'Permanent' }}</td>
                             <td>{{ optional($blocked->creator)->name ?: 'System' }}</td>
-                            <td>@if(auth()->user()->hasCrmPermission('security.ip.manage'))<form method="post" action="{{ route('security.ip.blacklist.destroy', $blocked->id) }}" onsubmit="return confirm('Remove this IP from the blacklist?');">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Remove blacklist entry"><i class="fas fa-trash"></i></button></form>@endif</td>
+                            <td>@if(auth()->user()->hasCrmPermission('security.ip.manage'))<form method="post" action="{{ route('security.ip.blacklist.destroy', $blocked->id) }}" data-confirm="Remove this IP from the blacklist?" data-confirm-title="Remove blacklist entry" data-confirm-tone="danger" data-confirm-button="Remove">@csrf @method('delete')<button class="btn btn-sm btn-outline-danger" type="submit" title="Remove blacklist entry"><i class="fas fa-trash"></i></button></form>@endif</td>
                         </tr>
                     @empty
                         <tr><td colspan="5"><div class="comm-empty"><i class="fas fa-shield-alt"></i>No blacklisted IP addresses.</div></td></tr>

@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignEnquiryRequest;
+use App\Http\Requests\BulkEnquiryActionRequest;
 use App\Http\Requests\GisFairLeadFilterRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Models\GisFairCampaign;
 use App\Models\GisFairLead;
 use App\Models\User;
+use App\Services\Enquiry\BulkEnquiryActionService;
 use App\Services\GisFair\GisFairLeadService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -128,6 +130,18 @@ class GisFairLeadAdminController extends Controller
         $lead->softDeleteBy($request->user());
 
         return redirect()->route('gis-fair.leads.index')->with('status', 'Fair lead moved to deleted records.');
+    }
+
+    public function bulkAction(BulkEnquiryActionRequest $request, BulkEnquiryActionService $service)
+    {
+        $validated = $request->validated();
+        $count = $service->execute(GisFairLead::class, $request->user(), $validated);
+
+        if ($request->expectsJson()) {
+            return response()->json(['status' => 'complete', 'processed' => $count]);
+        }
+
+        return redirect()->back()->with('status', $service->successMessage($validated['action'], $count));
     }
 
     public function restore(Request $request, int $lead)

@@ -51,10 +51,10 @@
             <div><h2 class="funnel-panel-title">Consent &amp; delivery</h2><div class="funnel-panel-copy">Server-recorded notice evidence and fair-code confirmation history.</div></div>
             <div class="funnel-actions">
                 @if(auth()->user()->hasCrmPermission('funnel.message.manage'))
-                    <form method="post" action="{{ route('gis-fair.leads.resend', $lead) }}" onsubmit="return confirm('Resend the fair code confirmation to {{ $lead->email }}?');">@csrf<button class="btn btn-sm btn-outline-primary" type="submit"><i class="fas fa-paper-plane"></i> Resend fair code</button></form>
+                    <form method="post" action="{{ route('gis-fair.leads.resend', $lead) }}" data-confirm="Resend the fair code confirmation to {{ $lead->email }}?" data-confirm-title="Resend fair code" data-confirm-button="Resend">@csrf<button class="btn btn-sm btn-outline-primary" type="submit"><i class="fas fa-paper-plane"></i> Resend fair code</button></form>
                 @endif
                 @if($lead->marketing_consent && auth()->user()->hasCrmPermission('enquiry.update_status'))
-                    <form method="post" action="{{ route('gis-fair.leads.withdraw-marketing', $lead) }}" onsubmit="return confirm('Record marketing consent as withdrawn?');">@csrf<button class="btn btn-sm btn-outline-danger" type="submit"><i class="fas fa-ban"></i> Withdraw marketing</button></form>
+                    <form method="post" action="{{ route('gis-fair.leads.withdraw-marketing', $lead) }}" data-confirm="Record marketing consent as withdrawn?" data-confirm-title="Withdraw marketing consent" data-confirm-tone="danger" data-confirm-button="Withdraw">@csrf<button class="btn btn-sm btn-outline-danger" type="submit"><i class="fas fa-ban"></i> Withdraw marketing</button></form>
                 @endif
             </div>
         </div>

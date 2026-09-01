@@ -43,7 +43,7 @@
                 <div><label>Content</label><input class="form-control" name="content" value="{{ $link->content }}" placeholder="hero-banner"><input class="form-control mt-1" type="datetime-local" name="expires_at" value="{{ optional($link->expires_at)->format('Y-m-d\TH:i') }}"><label class="funnel-check"><input type="checkbox" name="is_active" value="1" @checked($link->is_active)> Active</label></div>
                 <div class="funnel-inline"><button class="btn btn-sm btn-outline-primary" type="submit" title="Save tracking URL"><i class="fas fa-save"></i></button><button class="btn btn-sm btn-outline-danger" type="submit" form="delete-link-{{ $link->id }}" title="Delete tracking URL"><i class="fas fa-trash"></i></button></div>
             </form>
-            <form id="delete-link-{{ $link->id }}" method="post" action="{{ route('gis-fair.links.destroy', [$campaign, $link]) }}" onsubmit="return confirm('Delete this tracking URL? Existing attribution records will remain attached to the event.');">@csrf @method('delete')</form>
+            <form id="delete-link-{{ $link->id }}" method="post" action="{{ route('gis-fair.links.destroy', [$campaign, $link]) }}" data-confirm="Delete this tracking URL? Existing attribution records will remain attached to the event." data-confirm-title="Delete tracking URL" data-confirm-tone="danger" data-confirm-button="Delete">@csrf @method('delete')</form>
         @empty
             <div class="funnel-empty"><i class="fas fa-link"></i>No tracking URLs yet.</div>
         @endforelse
