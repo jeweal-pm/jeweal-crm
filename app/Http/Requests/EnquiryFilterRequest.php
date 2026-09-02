@@ -30,6 +30,7 @@ class EnquiryFilterRequest extends FormRequest
             'q' => ['nullable', 'string', 'max:100'],
             'trashed' => ['nullable', 'in:with,only'],
             'spam' => ['nullable', 'in:inbox,suspected,confirmed,not_spam'],
+            'record_source' => ['nullable', 'in:gis_enquiry,fair_funnel'],
             'sort' => ['nullable', 'in:created_at,-created_at,assigned_at,-assigned_at,status,-status'],
             'page' => ['nullable', 'integer', 'min:1'],
         ];

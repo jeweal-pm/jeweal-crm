@@ -22,6 +22,9 @@
             <p>Manage registrations, event attribution, fair codes and consent records.</p>
         </div>
         <div class="funnel-actions">
+            @if(auth()->user()->hasCrmPermission('enquiry.view.all'))
+                <a class="btn btn-outline-secondary btn-sm" href="{{ route('gis-fair.dashboard') }}"><i class="fas fa-chart-bar"></i> Dashboard</a>
+            @endif
             @if(auth()->user()->hasCrmPermission('funnel.config.manage'))
                 <a class="btn btn-outline-primary btn-sm" href="{{ route('gis-fair.campaigns.index') }}"><i class="fas fa-calendar-alt"></i> Events &amp; URLs</a>
             @endif

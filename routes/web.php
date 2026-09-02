@@ -6,6 +6,7 @@ use App\Http\Controllers\EmailTrackingController;
 use App\Http\Controllers\EnquiriesController;
 use App\Http\Controllers\GisEnquiriesController;
 use App\Http\Controllers\GisFairCampaignController;
+use App\Http\Controllers\GisFairDashboardController;
 use App\Http\Controllers\GisFairLeadAdminController;
 use App\Http\Controllers\GisFairRedirectController;
 use App\Http\Controllers\GisFairTrackingLinkController;
@@ -54,10 +55,14 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     Route::prefix('gis-fair')->name('gis-fair.')->group(function () {
+        Route::get('/dashboard', GisFairDashboardController::class)->name('dashboard');
         Route::get('/leads', [GisFairLeadAdminController::class, 'index'])->name('leads.index');
         Route::get('/leads/{lead}', [GisFairLeadAdminController::class, 'show'])->name('leads.show');
+        Route::get('/leads/{lead}/reply', [GisFairLeadAdminController::class, 'reply'])->name('leads.reply');
+        Route::post('/leads/{lead}/reply', [GisFairLeadAdminController::class, 'sendReply'])->name('leads.reply.send');
         Route::post('/leads/{lead}/assign', [GisFairLeadAdminController::class, 'assign'])->name('leads.assign');
         Route::patch('/leads/{lead}/status', [GisFairLeadAdminController::class, 'updateStatus'])->name('leads.status');
+        Route::patch('/leads/{lead}/spam-status', [GisFairLeadAdminController::class, 'updateSpamStatus'])->name('leads.spam-status');
         Route::post('/leads/{lead}/resend', [GisFairLeadAdminController::class, 'resend'])->name('leads.resend');
         Route::post('/leads/{lead}/withdraw-marketing', [GisFairLeadAdminController::class, 'withdrawMarketing'])->name('leads.withdraw-marketing');
         Route::delete('/leads/{lead}', [GisFairLeadAdminController::class, 'destroy'])->name('leads.destroy');
