@@ -34,7 +34,7 @@
     .funnel-form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
     .funnel-form-grid .span-2 { grid-column: span 2; }
     .funnel-form-grid .full { grid-column: 1 / -1; }
-    .funnel-check { display: flex; align-items: center; gap: 7px; min-height: 38px; color: #435168; font-size: 13px; }
+    .funnel-page .funnel-check { display: flex; align-items: center; gap: 7px; min-height: 38px; margin: 0; color: #435168; font-size: 13px; text-transform: none; }
     .funnel-help { margin-top: 5px; color: #7b879a; font-size: 11px; }
     .funnel-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; }
     .funnel-detail { min-height: 70px; padding: 13px 16px; border-right: 1px solid #e7ebf1; border-bottom: 1px solid #e7ebf1; }
@@ -43,8 +43,13 @@
     .funnel-detail-value { margin-top: 5px; color: #172033; font-size: 13px; overflow-wrap: anywhere; }
     .funnel-empty { padding: 52px 20px; text-align: center; color: #8793a5; }
     .funnel-empty i { display: block; margin-bottom: 8px; color: #a8b2c2; font-size: 28px; }
-    .funnel-link-row { display: grid; grid-template-columns: minmax(150px, .75fr) minmax(250px, 1.3fr) repeat(3, minmax(90px, .5fr)) minmax(220px, 1fr) auto; gap: 10px; align-items: end; padding: 14px 16px; border-bottom: 1px solid #e7ebf1; }
-    .funnel-link-row:last-child { border-bottom: 0; }
+    .funnel-link-entry { padding: 16px; border-bottom: 1px solid #e7ebf1; }
+    .funnel-link-entry:last-of-type { border-bottom: 0; }
+    .funnel-link-primary { display: grid; grid-template-columns: minmax(190px, .75fr) minmax(360px, 1.6fr) auto auto; gap: 12px; align-items: end; }
+    .funnel-link-fields { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #edf0f5; }
+    .funnel-link-fields .span-2 { grid-column: span 2; }
+    .funnel-link-actions { display: flex; align-items: center; gap: 6px; min-height: 38px; }
+    .funnel-link-active { min-width: 74px; }
     .funnel-copy-field { display: flex; gap: 6px; }
     .funnel-copy-field input { flex: 1; }
     .funnel-page .pagination { margin: 14px 16px; }
@@ -52,14 +57,16 @@
         .funnel-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .funnel-filter, .funnel-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .funnel-filter > :first-child, .funnel-form-grid .full { grid-column: 1 / -1; }
-        .funnel-link-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .funnel-link-primary, .funnel-link-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .funnel-link-fields .span-2 { grid-column: span 2; }
     }
     @media (max-width: 680px) {
         .funnel-page { padding: 14px; }
         .funnel-heading { display: block; }
         .funnel-actions { margin-top: 12px; }
-        .funnel-stats, .funnel-filter, .funnel-form-grid, .funnel-detail-grid, .funnel-link-row { grid-template-columns: 1fr; }
+        .funnel-stats, .funnel-filter, .funnel-form-grid, .funnel-detail-grid, .funnel-link-primary, .funnel-link-fields { grid-template-columns: 1fr; }
         .funnel-filter > :first-child, .funnel-form-grid .span-2, .funnel-form-grid .full { grid-column: auto; }
+        .funnel-link-fields .span-2 { grid-column: auto; }
         .funnel-detail { border-right: 0; }
     }
 </style>
