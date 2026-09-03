@@ -27,7 +27,7 @@ return [
         'Other',
     ],
     'interests' => ['POS', 'ERP', 'AI', 'eCommerce', 'Inventory', 'CRM'],
-    'sources' => ['gis-fair-funnel', 'design_1', 'design_2', 'design_3', 'funnel-bgjf'],
+    'sources' => ['gis-fair-funnel', 'design_1', 'design_2', 'design_3', 'design_jeweal', 'funnel-bgjf'],
     'countries' => [
         'TH' => ['name' => 'Thailand', 'dial' => '66', 'lengths' => [10]],
         'AU' => ['name' => 'Australia', 'dial' => '61', 'lengths' => [9, 10]],
