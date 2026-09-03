@@ -15,13 +15,20 @@ class GisFairRedirectController extends Controller
             ->where('code', $code)
             ->firstOrFail();
 
-        abort_unless($link->isAvailable(), 410, 'This event link is no longer active.');
+        if (! $link->isAvailable() || ! $link->campaign->isAvailableForTrackingRedirect()) {
+            return redirect()->away($link->expiredRedirectUrl(), 302, $this->redirectHeaders());
+        }
 
         $visit = $attribution->recordVisit($link, $request);
 
-        return redirect()->away($visit->getAttribute('redirect_url'), 302, [
+        return redirect()->away($visit->getAttribute('redirect_url'), 302, $this->redirectHeaders());
+    }
+
+    private function redirectHeaders(): array
+    {
+        return [
             'Cache-Control' => 'no-store, private',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-        ]);
+        ];
     }
 }

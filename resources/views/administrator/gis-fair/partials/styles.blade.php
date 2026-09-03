@@ -43,7 +43,7 @@
     .funnel-detail-value { margin-top: 5px; color: #172033; font-size: 13px; overflow-wrap: anywhere; }
     .funnel-empty { padding: 52px 20px; text-align: center; color: #8793a5; }
     .funnel-empty i { display: block; margin-bottom: 8px; color: #a8b2c2; font-size: 28px; }
-    .funnel-link-row { display: grid; grid-template-columns: minmax(160px, .8fr) minmax(250px, 1.4fr) repeat(3, minmax(100px, .55fr)) auto; gap: 10px; align-items: end; padding: 14px 16px; border-bottom: 1px solid #e7ebf1; }
+    .funnel-link-row { display: grid; grid-template-columns: minmax(150px, .75fr) minmax(250px, 1.3fr) repeat(3, minmax(90px, .5fr)) minmax(220px, 1fr) auto; gap: 10px; align-items: end; padding: 14px 16px; border-bottom: 1px solid #e7ebf1; }
     .funnel-link-row:last-child { border-bottom: 0; }
     .funnel-copy-field { display: flex; gap: 6px; }
     .funnel-copy-field input { flex: 1; }

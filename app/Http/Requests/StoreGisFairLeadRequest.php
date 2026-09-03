@@ -32,6 +32,7 @@ class StoreGisFairLeadRequest extends FormRequest
             'currentSystem' => ['required', Rule::in(config('gis_fair.current_systems'))],
             'interests' => ['required', 'array', 'min:1', 'max:6'],
             'interests.*' => ['required', 'distinct', Rule::in(config('gis_fair.interests'))],
+            'remark' => ['nullable', 'string', 'max:2000'],
             'consent' => ['sometimes', 'boolean'],
             'privacyAgree' => ['required', 'accepted'],
             'source' => ['nullable', Rule::in(config('gis_fair.sources'))],

@@ -145,6 +145,7 @@ class GisFairLeadService
                 'phone_dial_code' => $phone['dial'],
                 'current_system' => $data['currentSystem'],
                 'interests' => $data['interests'],
+                'remark' => $data['remark'] ?? null,
                 'source' => $data['source'],
                 'marketing_consent' => $marketingConsent,
                 'privacy_agreed' => true,

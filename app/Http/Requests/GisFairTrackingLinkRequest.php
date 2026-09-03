@@ -20,6 +20,7 @@ class GisFairTrackingLinkRequest extends FormRequest
             'name' => ['required', 'string', 'max:120'],
             'code' => ['required', 'alpha_dash', 'max:64', Rule::unique('gis_fair_tracking_links', 'code')->ignore($linkId)],
             'destination_url' => ['nullable', 'url:http,https', 'max:2000'],
+            'expired_redirect_url' => ['nullable', 'url:http,https', 'max:2000'],
             'source' => ['nullable', 'string', 'max:80'],
             'medium' => ['nullable', 'string', 'max:80'],
             'content' => ['nullable', 'string', 'max:120'],

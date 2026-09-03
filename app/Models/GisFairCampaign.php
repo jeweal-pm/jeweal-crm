@@ -43,4 +43,10 @@ class GisFairCampaign extends Model
 
         return ! $this->offer_deadline || now()->lte($this->offer_deadline);
     }
+
+    public function isAvailableForTrackingRedirect(): bool
+    {
+        return $this->isOpenForSubmissions()
+            && (! $this->ends_at || now()->lte($this->ends_at));
+    }
 }

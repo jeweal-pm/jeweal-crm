@@ -12,7 +12,7 @@ class GisFairTrackingLink extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'campaign_id', 'name', 'code', 'destination_url', 'source', 'medium', 'content',
+        'campaign_id', 'name', 'code', 'destination_url', 'expired_redirect_url', 'source', 'medium', 'content',
         'is_active', 'expires_at', 'click_count', 'lead_count', 'created_by', 'updated_by',
     ];
 
@@ -36,5 +36,10 @@ class GisFairTrackingLink extends Model
     public function isAvailable(): bool
     {
         return $this->is_active && (! $this->expires_at || now()->lte($this->expires_at));
+    }
+
+    public function expiredRedirectUrl(): string
+    {
+        return $this->expired_redirect_url ?: 'https://jeweal.com';
     }
 }

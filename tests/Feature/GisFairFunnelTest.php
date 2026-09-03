@@ -47,12 +47,14 @@ class GisFairFunnelTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('ok', true)
             ->assertJsonPath('duplicate', false)
-            ->assertJsonPath('data.eventCode', 'bgjf-74');
+            ->assertJsonPath('data.eventCode', 'bgjf-74')
+            ->assertJsonPath('data.remark', 'Interested in a product demonstration.');
 
         $lead = GisFairLead::firstOrFail();
         $this->assertSame($campaign->id, $lead->campaign_id);
         $this->assertSame($link->id, $lead->tracking_link_id);
         $this->assertSame($response->json('fairCode'), $lead->fair_code);
+        $this->assertSame('Interested in a product demonstration.', $lead->remark);
         $this->assertDatabaseHas('gis_fair_tracking_visits', [
             'token' => $query['ref'],
             'lead_id' => $lead->id,
@@ -63,6 +65,46 @@ class GisFairFunnelTest extends TestCase
             'marketing_consent' => true,
         ]);
         $this->assertSame(1, $link->fresh()->lead_count);
+    }
+
+    public function test_expired_event_uses_the_tracking_link_fallback_without_recording_a_visit(): void
+    {
+        $campaign = $this->campaign([
+            'ends_at' => now()->subMinute(),
+            'offer_deadline' => now()->addWeek(),
+        ]);
+        $link = GisFairTrackingLink::create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Expired campaign link',
+            'code' => 'expired-campaign-link',
+            'expired_redirect_url' => 'https://gis247.net/events/bgjf-74',
+            'is_active' => true,
+            'expires_at' => now()->addMonth(),
+        ]);
+
+        $this->get(route('gis-fair.redirect', $link->code))
+            ->assertRedirect('https://gis247.net/events/bgjf-74')
+            ->assertHeader('Cache-Control', 'no-store, private');
+
+        $this->assertDatabaseCount('gis_fair_tracking_visits', 0);
+        $this->assertSame(0, $link->fresh()->click_count);
+    }
+
+    public function test_unavailable_event_link_redirects_to_jeweal_when_no_main_website_is_configured(): void
+    {
+        $campaign = $this->campaign();
+        $link = GisFairTrackingLink::create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Inactive link',
+            'code' => 'inactive-campaign-link',
+            'is_active' => false,
+        ]);
+
+        $this->get(route('gis-fair.redirect', $link->code))
+            ->assertRedirect('https://jeweal.com');
+
+        $this->assertDatabaseCount('gis_fair_tracking_visits', 0);
+        $this->assertSame(0, $link->fresh()->click_count);
     }
 
     public function test_same_email_is_deduplicated_within_an_event_and_keeps_consent_evidence(): void
@@ -76,6 +118,7 @@ class GisFairFunnelTest extends TestCase
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.42'])
             ->postJson('/api/gis-fair-lead', $this->payload([
                 'company' => 'Updated Company',
+                'remark' => 'Please contact after the fair.',
                 'consent' => false,
             ]))
             ->assertOk()
@@ -85,6 +128,7 @@ class GisFairFunnelTest extends TestCase
         $lead = GisFairLead::firstOrFail();
         $this->assertSame(2, $lead->submission_count);
         $this->assertSame('Updated Company', $lead->company);
+        $this->assertSame('Please contact after the fair.', $lead->remark);
         $this->assertFalse($lead->marketing_consent);
         $this->assertNotNull($lead->marketing_consent_withdrawn_at);
         $this->assertSame(2, $lead->submissions()->count());
@@ -202,7 +246,25 @@ class GisFairFunnelTest extends TestCase
             ->get(route('gis-fair.campaigns.show', $campaign))
             ->assertOk()
             ->assertSee('Tracking URLs')
+            ->assertSee('Expired redirect URL')
             ->assertSee('/api/gis-fair-lead');
+
+        $this->actingAs($user)
+            ->post(route('gis-fair.links.store', $campaign), [
+                'name' => 'Partner campaign',
+                'code' => 'partner-campaign',
+                'destination_url' => 'https://gis247.net/fair',
+                'expired_redirect_url' => 'https://gis247.net/events',
+                'expires_at' => now()->addDay()->format('Y-m-d H:i:s'),
+                'is_active' => true,
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('gis_fair_tracking_links', [
+            'campaign_id' => $campaign->id,
+            'code' => 'partner-campaign',
+            'expired_redirect_url' => 'https://gis247.net/events',
+        ]);
 
         $this->actingAs($user)
             ->get(route('gis-fair.leads.index'))
@@ -288,6 +350,7 @@ class GisFairFunnelTest extends TestCase
             'country' => 'Thailand',
             'currentSystem' => 'None — spreadsheets & paper',
             'interests' => ['POS', 'Inventory', 'CRM'],
+            'remark' => 'Interested in a product demonstration.',
             'consent' => true,
             'privacyAgree' => true,
             'source' => 'design_2',
