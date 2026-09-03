@@ -10,7 +10,7 @@
 <section class="funnel-page">
     <header class="funnel-heading">
         <div><h1>GIS Fair Events</h1><p>Control funnel availability, event details and measurable redirect URLs.</p></div>
-        <div class="funnel-actions"><a class="btn btn-outline-secondary btn-sm" href="{{ route('gis-fair.leads.index') }}"><i class="fas fa-users"></i> Leads</a><a class="btn btn-primary btn-sm" href="{{ route('gis-fair.campaigns.create') }}"><i class="fas fa-plus"></i> New event</a></div>
+        <div class="funnel-actions"><a class="btn btn-outline-secondary btn-sm" href="{{ route('gis-fair.dashboard') }}"><i class="fas fa-chart-bar"></i> Dashboard</a><a class="btn btn-outline-secondary btn-sm" href="{{ route('gis-fair.leads.index') }}"><i class="fas fa-users"></i> Prospects</a><a class="btn btn-primary btn-sm" href="{{ route('gis-fair.campaigns.create') }}"><i class="fas fa-plus"></i> New event</a></div>
     </header>
 
     @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif

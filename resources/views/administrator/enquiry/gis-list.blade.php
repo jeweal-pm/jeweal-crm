@@ -17,8 +17,8 @@
     <div class="container-fluid">
         <div class="crm-topbar">
             <div class="crm-title">
-                <h2>GIS Enquiries</h2>
-                <div class="crm-subtitle">GIS leads, routing, and customer conversion workflow.</div>
+                <h2>GIS Prospects</h2>
+                <div class="crm-subtitle">One pipeline for direct GIS enquiries and eligible Fair Funnel registrations.</div>
             </div>
             <div class="crm-switcher">
                 <a class="btn btn-outline-secondary btn-sm" href="{{ route('enquiry.index') }}">
@@ -96,6 +96,14 @@
                     </select>
                 </div>
                 <div class="form-group col-lg-2 col-md-4">
+                    <label>Source</label>
+                    <select name="record_source" class="form-control">
+                        <option value="">All sources</option>
+                        <option value="gis_enquiry" @selected(($filters['record_source'] ?? '') === 'gis_enquiry')>GIS-Enquiry</option>
+                        <option value="fair_funnel" @selected(($filters['record_source'] ?? '') === 'fair_funnel')>fair-funnel</option>
+                    </select>
+                </div>
+                <div class="form-group col-lg-2 col-md-4">
                     <label>Deleted</label>
                     <select name="trashed" class="form-control">
                         <option value="">Active only</option>
@@ -122,7 +130,7 @@
                 </div>
                 <div class="form-group col-lg-10 col-md-8">
                     <label>Search</label>
-                    <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Name or email">
+                    <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="form-control" placeholder="Name, email, company or fair code">
                 </div>
                 <div class="form-group col-lg-2 col-md-4 d-flex align-items-end">
                     <button class="btn btn-primary btn-block" type="submit">
@@ -134,7 +142,7 @@
 
         <div class="crm-panel">
             <div class="crm-panel-head">
-                <h3 class="crm-panel-title">GIS Pipeline Records</h3>
+                <h3 class="crm-panel-title">Unified GIS Prospect Records</h3>
                 <div class="crm-result-count">{{ number_format($data->total()) }} results</div>
             </div>
 
@@ -148,14 +156,15 @@
                 <table class="table table-hover crm-table">
                     <colgroup>
                         @if($bulkEnabled)<col style="width: 4%">@endif
-                        <col style="width: 13%">
-                        <col style="width: 15%">
-                        <col style="width: 11%">
-                        <col style="width: 17%">
+                        <col style="width: 12%">
                         <col style="width: 9%">
-                        <col style="width: 10%">
-                        <col style="width: 7%">
                         <col style="width: 14%">
+                        <col style="width: 12%">
+                        <col style="width: 14%">
+                        <col style="width: 8%">
+                        <col style="width: 9%">
+                        <col style="width: 7%">
+                        <col style="width: 15%">
                     </colgroup>
                     <thead>
                     <tr>
@@ -165,6 +174,7 @@
                             </th>
                         @endif
                         <th>Lead</th>
+                        <th>Source</th>
                         <th>Contact</th>
                         <th>Inquiry</th>
                         <th>Message</th>
@@ -177,32 +187,49 @@
                     <tbody>
                     @forelse($data as $row)
                         @php
+                            $isFairLead = $row instanceof \App\Models\GisFairLead;
                             $assigneeName = $row->assignedTo?->name;
                             $assigneeInitial = $assigneeName ? \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($assigneeName, 0, 1)) : '-';
+                            $phone = $isFairLead ? $row->phone_e164 : $row->phone_number;
+                            $inquiry = $isFairLead ? ($row->campaign?->name ?: 'Fair registration') : $row->inquiry;
+                            $message = $isFairLead
+                                ? (collect($row->interests)->filter()->isNotEmpty() ? 'Interests: '.collect($row->interests)->filter()->join(', ') : $row->current_system)
+                                : $row->message;
+                            $assignRoute = $isFairLead ? route('gis-fair.leads.assign', $row) : route('gis-enquiries.assign', $row->id);
+                            $statusRoute = $isFairLead ? route('gis-fair.leads.status', $row) : route('gis-enquiries.status', $row->id);
+                            $replyRoute = $isFairLead ? route('gis-fair.leads.reply', $row) : route('gis-enquiries.reply', $row->id);
+                            $deleteRoute = $isFairLead ? route('gis-fair.leads.destroy', $row) : route('gis-enquiries.destroy', $row->id);
+                            $restoreRoute = $isFairLead ? route('gis-fair.leads.restore', $row->id) : route('gis-enquiries.restore', $row->id);
+                            $spamRoute = $isFairLead ? route('gis-fair.leads.spam-status', $row) : route('gis-enquiries.spam-status', $row->id);
                         @endphp
                         <tr>
                             @if($bulkEnabled)
                                 <td class="crm-select-cell">
-                                    <input class="crm-select-checkbox" type="checkbox" name="ids[]" value="{{ $row->id }}" form="{{ $bulkFormId }}" data-bulk-item aria-label="Select GIS enquiry {{ trim($row->first_name.' '.$row->last_name) }}">
+                                    <input class="crm-select-checkbox" type="checkbox" name="records[]" value="{{ $row->record_key }}" form="{{ $bulkFormId }}" data-bulk-item aria-label="Select {{ trim($row->first_name.' '.$row->last_name) }}">
                                 </td>
                             @endif
                             <td>
                                 <div class="crm-primary">{{ trim($row->first_name.' '.$row->last_name) }}</div>
+                                @if($isFairLead && $row->company)<div class="crm-muted">{{ $row->company }}</div>@endif
+                            </td>
+                            <td>
+                                <span class="crm-source crm-source-{{ $isFairLead ? 'fair' : 'direct' }}">{{ $isFairLead ? 'fair-funnel' : 'GIS-Enquiry' }}</span>
+                                @if($isFairLead)<div class="crm-muted">{{ $row->fair_code }}</div>@endif
                             </td>
                             <td>
                                 <div class="crm-email-line">
                                     <a class="crm-link" href="mailto:{{ $row->email }}">{{ $row->email }}</a>
                                     @if(! $row->trashed())
-                                        <a class="crm-reply-link" href="{{ route('gis-enquiries.reply', $row->id) }}" title="Reply email">
+                                        <a class="crm-reply-link" href="{{ $replyRoute }}" title="Reply email">
                                             <i class="fas fa-reply"></i>
                                         </a>
                                     @endif
                                 </div>
-                                <a href="tel:{{ $row->phone_number }}">{{ $row->phone_number }}</a>
+                                <a href="tel:{{ $phone }}">{{ $phone }}</a>
                             </td>
-                            <td>{{ $row->inquiry }}</td>
-                            <td class="crm-muted" title="{{ $row->message }}">
-                                {{ \Illuminate\Support\Str::limit($row->message, 120) ?: '-' }}
+                            <td>{{ $inquiry }}</td>
+                            <td class="crm-muted" title="{{ $message }}">
+                                {{ \Illuminate\Support\Str::limit($message, 120) ?: '-' }}
                             </td>
                             <td>
                                 <span class="crm-status crm-status-{{ $row->trashed() ? 'deleted' : $row->status }}">
@@ -234,7 +261,7 @@
                                     @if(! $row->trashed())
                                         @can('assign', $row)
                                             @if($assignableUsers->isNotEmpty())
-                                                <form method="post" action="{{ route('gis-enquiries.assign', $row->id) }}" class="crm-action-form">
+                                                <form method="post" action="{{ $assignRoute }}" class="crm-action-form">
                                                     @csrf
                                                     <select name="user_id" class="form-control form-control-sm" required>
                                                         <option value="">Assign to</option>
@@ -250,7 +277,7 @@
                                         @endcan
 
                                         @can('updateStatus', $row)
-                                            <form method="post" action="{{ route('gis-enquiries.status', $row->id) }}" class="crm-action-form">
+                                            <form method="post" action="{{ $statusRoute }}" class="crm-action-form">
                                                 @csrf
                                                 @method('PATCH')
                                                 <select name="status" class="form-control form-control-sm">
@@ -265,7 +292,7 @@
                                         @endcan
 
                                         @can('delete', $row)
-                                            <form method="post" action="{{ route('gis-enquiries.destroy', $row->id) }}" class="crm-action-form" data-confirm="Move this GIS enquiry to deleted records?" data-confirm-title="Delete GIS enquiry" data-confirm-tone="danger" data-confirm-button="Delete">
+                                            <form method="post" action="{{ $deleteRoute }}" class="crm-action-form" data-confirm="Move this GIS prospect to deleted records?" data-confirm-title="Delete GIS prospect" data-confirm-tone="danger" data-confirm-button="Delete">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button class="btn btn-sm btn-outline-danger crm-icon-btn" type="submit" title="Soft delete">
@@ -276,7 +303,7 @@
 
                                         @can('restore', $row)
                                             @if($row->spam_status === 'suspected')
-                                                <form method="post" action="{{ route('gis-enquiries.spam-status', $row->id) }}" class="crm-action-form">
+                                                <form method="post" action="{{ $spamRoute }}" class="crm-action-form">
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="spam_status" value="not_spam">
@@ -284,7 +311,7 @@
                                                         <i class="fas fa-inbox"></i>
                                                     </button>
                                                 </form>
-                                                <form method="post" action="{{ route('gis-enquiries.spam-status', $row->id) }}" class="crm-action-form">
+                                                <form method="post" action="{{ $spamRoute }}" class="crm-action-form">
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="spam_status" value="confirmed">
@@ -293,7 +320,7 @@
                                                     </button>
                                                 </form>
                                             @elseif(in_array($row->spam_status, ['clean', 'not_spam'], true))
-                                                <form method="post" action="{{ route('gis-enquiries.spam-status', $row->id) }}" class="crm-action-form">
+                                                <form method="post" action="{{ $spamRoute }}" class="crm-action-form">
                                                     @csrf
                                                     @method('PATCH')
                                                     <input type="hidden" name="spam_status" value="suspected">
@@ -303,9 +330,14 @@
                                                 </form>
                                             @endif
                                         @endcan
+                                        @if($isFairLead)
+                                            <a class="btn btn-sm btn-outline-secondary crm-icon-btn" href="{{ route('gis-fair.leads.show', $row) }}" title="View fair registration">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        @endif
                                     @else
                                         @can('restore', $row)
-                                            <form method="post" action="{{ route('gis-enquiries.restore', $row->id) }}" class="crm-action-form">
+                                            <form method="post" action="{{ $restoreRoute }}" class="crm-action-form">
                                                 @csrf
                                                 <button class="btn btn-sm btn-outline-secondary crm-icon-btn" type="submit" title="Restore">
                                                     <i class="fas fa-undo"></i>
@@ -318,7 +350,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ $bulkEnabled ? 9 : 8 }}" class="crm-empty">No GIS enquiries found.</td>
+                            <td colspan="{{ $bulkEnabled ? 10 : 9 }}" class="crm-empty">No GIS prospects found.</td>
                         </tr>
                     @endforelse
                     </tbody>

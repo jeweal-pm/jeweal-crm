@@ -232,6 +232,29 @@
         text-decoration: none;
     }
 
+    .crm-source {
+        border: 1px solid transparent;
+        border-radius: 4px;
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        padding: 6px 8px;
+        white-space: nowrap;
+    }
+
+    .crm-source-direct {
+        background: #edf3fc;
+        border-color: #d4e1f4;
+        color: #24558d;
+    }
+
+    .crm-source-fair {
+        background: #e8f6f3;
+        border-color: #c9e8e1;
+        color: #087064;
+    }
+
     .crm-status {
         border-radius: 999px;
         display: inline-flex;

@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkEnquiryActionRequest;
+use App\Http\Requests\EnquiryReplyRequest;
 use App\Http\Requests\GisFairLeadFilterRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
+use App\Http\Requests\UpdateSpamStatusRequest;
+use App\Mail\EnquiryReply;
 use App\Models\GisFairCampaign;
 use App\Models\GisFairLead;
 use App\Models\User;
@@ -13,6 +16,7 @@ use App\Services\Enquiry\BulkEnquiryActionService;
 use App\Services\GisFair\GisFairLeadService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class GisFairLeadAdminController extends Controller
 {
@@ -124,12 +128,65 @@ class GisFairLeadAdminController extends Controller
         return redirect()->back()->with('status', 'Marketing consent withdrawn.');
     }
 
+    public function updateSpamStatus(UpdateSpamStatusRequest $request, GisFairLead $lead)
+    {
+        $this->authorize('restore', $lead);
+        $lead->forceFill([
+            'spam_status' => $request->validated('spam_status'),
+            'spam_reviewed_by' => $request->user()->id,
+            'spam_reviewed_at' => now(),
+        ])->save();
+
+        return redirect()->back()->with('status', 'Fair lead spam status updated.');
+    }
+
+    public function reply(Request $request, GisFairLead $lead)
+    {
+        $this->authorize('view', $lead);
+        $name = trim($lead->first_name.' '.$lead->last_name);
+        $eventName = $lead->campaign?->name ?: 'GIS Fair event';
+
+        return view('administrator.enquiry.reply', [
+            'enquiry' => $lead,
+            'type' => 'gis_fair',
+            'backRoute' => route('gisEnquiry'),
+            'sendRoute' => route('gis-fair.leads.reply.send', $lead),
+            'recipientName' => $name,
+            'recipientEmail' => $lead->email,
+            'subtitle' => $eventName,
+            'subject' => 'Re: '.$eventName.' registration',
+            'body' => trim(sprintf(
+                "Dear %s,\n\nThank you for registering for %s. Our team will follow up shortly.\n\nBest regards,\n%s",
+                $name,
+                $eventName,
+                $request->user()->name
+            )),
+        ]);
+    }
+
+    public function sendReply(EnquiryReplyRequest $request, GisFairLead $lead)
+    {
+        $this->authorize('view', $lead);
+        $validated = $request->validated();
+        $name = trim($lead->first_name.' '.$lead->last_name);
+
+        Mail::to($lead->email, $name)->send(new EnquiryReply(
+            $lead,
+            'GIS enquiry',
+            $validated['subject'],
+            $validated['message'],
+            $request->user()
+        ));
+
+        return redirect()->route('gisEnquiry')->with('status', 'Reply email sent successfully.');
+    }
+
     public function destroy(Request $request, GisFairLead $lead)
     {
         $this->authorize('delete', $lead);
         $lead->softDeleteBy($request->user());
 
-        return redirect()->route('gis-fair.leads.index')->with('status', 'Fair lead moved to deleted records.');
+        return redirect()->back()->with('status', 'Fair lead moved to deleted records.');
     }
 
     public function bulkAction(BulkEnquiryActionRequest $request, BulkEnquiryActionService $service)

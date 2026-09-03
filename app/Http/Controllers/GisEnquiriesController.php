@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkDeleteEnquiryRequest;
-use App\Http\Requests\BulkEnquiryActionRequest;
 use App\Http\Requests\EnquiryFilterRequest;
 use App\Http\Requests\EnquiryReplyRequest;
 use App\Http\Requests\GisEnquiryRequest;
+use App\Http\Requests\GisProspectBulkActionRequest;
 use App\Http\Requests\UpdateEnquiryStatusRequest;
 use App\Http\Requests\UpdateSpamStatusRequest;
 use App\Http\Resources\GisEnquiryResource;
@@ -15,7 +15,8 @@ use App\Mail\EnquiryReply;
 use App\Models\GisEnquiry;
 use App\Models\User;
 use App\Services\Email\EnquiryEmailAutomationService;
-use App\Services\Enquiry\BulkEnquiryActionService;
+use App\Services\Enquiry\GisProspectBulkActionService;
+use App\Services\Enquiry\GisProspectIndexService;
 use App\Services\Spam\EnquirySpamScorer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,23 +30,20 @@ class GisEnquiriesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(EnquiryFilterRequest $request)
+    public function index(EnquiryFilterRequest $request, GisProspectIndexService $prospects)
     {
         $this->authorize('viewAny', GisEnquiry::class);
-
-        $query = $this->applyFilters(
-            GisEnquiry::query()
-                ->with(['assignedTo', 'deletedBy'])
-                ->visibleTo(auth()->user()),
-            $request
-        );
+        $filters = $request->validated();
+        if (($filters['trashed'] ?? null) && ! $request->user()->hasCrmPermission('enquiry.restore')) {
+            abort(403);
+        }
 
         return view('administrator.enquiry.gis-list', [
-            'data' => $query->paginate(25)->appends($request->validated()),
-            'assignableUsers' => $this->assignableUsers(auth()->user()),
-            'summary' => $this->summary(auth()->user()),
+            'data' => $prospects->paginate($request->user(), $filters),
+            'assignableUsers' => $this->assignableUsers($request->user()),
+            'summary' => $prospects->summary($request->user()),
             'teamUsers' => $this->teamUsers(),
-            'filters' => $request->validated(),
+            'filters' => $filters,
             'statusOptions' => [
                 'lead_mql' => 'Lead / MQL',
                 'sql' => 'SQL',
@@ -180,10 +178,10 @@ class GisEnquiriesController extends Controller
         return response()->json(['status' => 'complete']);
     }
 
-    public function bulkAction(BulkEnquiryActionRequest $request, BulkEnquiryActionService $service)
+    public function bulkAction(GisProspectBulkActionRequest $request, GisProspectBulkActionService $service)
     {
         $validated = $request->validated();
-        $count = $service->execute(GisEnquiry::class, $request->user(), $validated);
+        $count = $service->execute($request->user(), $validated);
 
         if ($request->expectsJson()) {
             return response()->json(['status' => 'complete', 'processed' => $count]);
@@ -401,6 +399,7 @@ class GisEnquiriesController extends Controller
             'sort',
             'q',
             'spam',
+            'record_source',
         ]));
     }
 
@@ -443,20 +442,6 @@ class GisEnquiriesController extends Controller
             })
             ->orderBy('name')
             ->get(['id', 'name']);
-    }
-
-    private function summary(User $user): array
-    {
-        $base = GisEnquiry::query()->visibleTo($user);
-
-        return [
-            'total' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CLEAN)->count(),
-            'unassigned' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CLEAN)->whereNull('assigned_to')->count(),
-            'customers' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CLEAN)->where('status', 'customer')->count(),
-            'deleted' => (clone $base)->onlyTrashed()->count(),
-            'suspected_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_SUSPECTED)->count(),
-            'confirmed_spam' => (clone $base)->where('spam_status', EnquirySpamScorer::STATUS_CONFIRMED)->count(),
-        ];
     }
 
     private function defaultReplyBody(string $name, User $user): string

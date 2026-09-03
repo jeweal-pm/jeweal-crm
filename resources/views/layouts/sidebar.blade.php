@@ -28,11 +28,20 @@
                     <span>GIS Enquiries</span>
                 </a>
             </li>
-            <li>
-                <a href="{{ route('gis-fair.leads.index') }}" class="crm-sidebar-link {{ request()->routeIs('gis-fair.*') ? 'crm-active' : '' }}">
+            <li class="crm-sidebar-group">
+                <div class="crm-sidebar-link crm-sidebar-parent {{ request()->routeIs('gis-fair.*') ? 'crm-active' : '' }}">
                     <i class="fas fa-ticket-alt"></i>
                     <span>GIS Fair Funnel</span>
-                </a>
+                </div>
+                <ul class="crm-sidebar-submenu">
+                    @if(Auth::user()->hasCrmPermission('enquiry.view.all'))
+                        <li><a href="{{ route('gis-fair.dashboard') }}" class="crm-sidebar-sublink {{ request()->routeIs('gis-fair.dashboard') ? 'crm-active' : '' }}"><i class="fas fa-chart-bar"></i><span>Dashboard</span></a></li>
+                    @endif
+                    <li><a href="{{ route('gis-fair.leads.index') }}" class="crm-sidebar-sublink {{ request()->routeIs('gis-fair.leads.*') ? 'crm-active' : '' }}"><i class="fas fa-user-tag"></i><span>List All Prospect</span></a></li>
+                    @if(Auth::user()->hasCrmPermission('funnel.config.manage'))
+                        <li><a href="{{ route('gis-fair.campaigns.index') }}" class="crm-sidebar-sublink {{ request()->routeIs('gis-fair.campaigns.*') || request()->routeIs('gis-fair.links.*') ? 'crm-active' : '' }}"><i class="fas fa-calendar-alt"></i><span>List All Event</span></a></li>
+                    @endif
+                </ul>
             </li>
             <li>
                 <a href="{{ route('gms-enquiries.index') }}" class="crm-sidebar-link {{ request()->routeIs('gms-enquiries.*') ? 'crm-active' : '' }}">

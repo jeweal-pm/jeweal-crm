@@ -12,17 +12,20 @@ use Illuminate\Validation\ValidationException;
 
 class BulkEnquiryActionService
 {
-    public function execute(string $modelClass, User $actor, array $data): int
+    public function execute(string $modelClass, User $actor, array $data, ?callable $scope = null): int
     {
-        return DB::transaction(function () use ($modelClass, $actor, $data) {
+        return DB::transaction(function () use ($modelClass, $actor, $data, $scope) {
             if ($data['action'] === 'delete') {
                 Gate::forUser($actor)->authorize('bulkDelete', $modelClass);
             }
 
             $ids = array_values(array_unique(array_map('intval', $data['ids'])));
-            $records = $modelClass::withTrashed()
-                ->visibleTo($actor)
-                ->whereIn('id', $ids)
+            $query = $modelClass::withTrashed()->visibleTo($actor);
+            if ($scope) {
+                $query = $scope($query);
+            }
+
+            $records = $query->whereIn('id', $ids)
                 ->lockForUpdate()
                 ->get();
 
