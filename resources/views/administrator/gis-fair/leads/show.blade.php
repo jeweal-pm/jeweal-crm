@@ -27,6 +27,7 @@
                 'Store count' => number_format($lead->stores),
                 'Current system' => $lead->current_system,
                 'Interests' => implode(', ', $lead->interests ?: []),
+                'Remark' => $lead->remark,
                 'Assignee' => $lead->assignedTo?->name ?: 'Unassigned',
             ] as $label => $value)
                 <div class="funnel-detail"><div class="funnel-detail-label">{{ $label }}</div><div class="funnel-detail-value">{{ $value ?: '-' }}</div></div>

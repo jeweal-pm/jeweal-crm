@@ -14,6 +14,7 @@ class GisFairLeadResource extends JsonResource
             'eventCode' => $this->campaign?->code,
             'eventName' => $this->campaign?->name,
             'status' => $this->status,
+            'remark' => $this->remark,
         ];
     }
 }

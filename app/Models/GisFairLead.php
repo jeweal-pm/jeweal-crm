@@ -18,7 +18,7 @@ class GisFairLead extends Model implements EnquirableContract
         'campaign_id', 'tracking_link_id', 'tracking_visit_token', 'fair_code',
         'first_name', 'last_name', 'email', 'company', 'business_type', 'stores',
         'country', 'phone_iso', 'phone_local', 'phone_e164', 'phone_dial_code',
-        'current_system', 'interests', 'source', 'marketing_consent',
+        'current_system', 'interests', 'remark', 'source', 'marketing_consent',
         'marketing_consent_at', 'marketing_consent_withdrawn_at', 'privacy_agreed',
         'privacy_agreed_at', 'privacy_notice_version', 'consent_ip', 'consent_user_agent',
         'submission_count', 'last_submitted_at', 'confirmation_sent_at',
