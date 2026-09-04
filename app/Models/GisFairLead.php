@@ -26,7 +26,7 @@ class GisFairLead extends Model implements EnquirableContract
     ];
 
     protected $attributes = [
-        'status' => 'lead_mql',
+        'status' => 'prospect',
         'spam_status' => 'clean',
         'spam_score' => 0,
     ];

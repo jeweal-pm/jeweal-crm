@@ -85,7 +85,7 @@ class GisProspectMergeTest extends TestCase
             ->assertRedirect(route('gisEnquiry'))
             ->assertSessionHasErrors('ids');
 
-        $this->assertSame('lead_mql', $fairLead->fresh()->status);
+        $this->assertSame('prospect', $fairLead->fresh()->status);
     }
 
     public function test_fair_prospect_supports_gis_reply_and_spam_review_workflows(): void

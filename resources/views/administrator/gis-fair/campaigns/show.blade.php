@@ -34,15 +34,23 @@
     <section class="funnel-panel">
         <div class="funnel-panel-head"><div><h2 class="funnel-panel-title">Tracking URLs</h2><div class="funnel-panel-copy">Each URL records a privacy-minimised visit and passes event attribution to the funnel.</div></div><span class="funnel-meta">{{ $campaign->trackingLinks->count() }} URLs</span></div>
         @forelse($campaign->trackingLinks as $link)
-            <form class="funnel-link-row" method="post" action="{{ route('gis-fair.links.update', [$campaign, $link]) }}">
+            <form class="funnel-link-entry" method="post" action="{{ route('gis-fair.links.update', [$campaign, $link]) }}">
                 @csrf @method('put')
-                <div><label>Name</label><input class="form-control" name="name" value="{{ $link->name }}" required><div class="funnel-meta">{{ number_format($link->click_count) }} clicks / {{ number_format($link->lead_count) }} leads</div></div>
-                <div><label>Tracking URL</label><div class="funnel-copy-field"><input id="tracking-url-{{ $link->id }}" class="form-control" readonly value="{{ route('gis-fair.redirect', $link->code) }}"><button class="btn btn-outline-secondary" type="button" onclick="copyFunnelValue('tracking-url-{{ $link->id }}')" title="Copy tracking URL"><i class="fas fa-copy"></i></button></div><label class="mt-1">Destination URL</label><input class="form-control" type="url" name="destination_url" value="{{ $link->destination_url }}" placeholder="Event default destination"><input type="hidden" name="code" value="{{ $link->code }}"></div>
-                <div><label>Source</label><input class="form-control" name="source" value="{{ $link->source }}" placeholder="facebook"></div>
-                <div><label>Medium</label><input class="form-control" name="medium" value="{{ $link->medium }}" placeholder="social"></div>
-                <div><label>Content</label><input class="form-control" name="content" value="{{ $link->content }}" placeholder="hero-banner"></div>
-                <div><label>Expires at</label><input class="form-control" type="datetime-local" name="expires_at" value="{{ optional($link->expires_at)->format('Y-m-d\TH:i') }}"><label class="mt-1">Expired redirect URL</label><input class="form-control" type="url" name="expired_redirect_url" value="{{ $link->expired_redirect_url }}" placeholder="https://jeweal.com"><label class="funnel-check"><input type="checkbox" name="is_active" value="1" @checked($link->is_active)> Active</label></div>
-                <div class="funnel-inline"><button class="btn btn-sm btn-outline-primary" type="submit" title="Save tracking URL"><i class="fas fa-save"></i></button><button class="btn btn-sm btn-outline-danger" type="submit" form="delete-link-{{ $link->id }}" title="Delete tracking URL"><i class="fas fa-trash"></i></button></div>
+                <div class="funnel-link-primary">
+                    <div><label>Name</label><input class="form-control" name="name" value="{{ $link->name }}" required><div class="funnel-meta">{{ number_format($link->click_count) }} clicks / {{ number_format($link->lead_count) }} leads</div></div>
+                    <div><label>Tracking URL</label><div class="funnel-copy-field"><input id="tracking-url-{{ $link->id }}" class="form-control" readonly value="{{ route('gis-fair.redirect', $link->code) }}"><button class="btn btn-outline-secondary" type="button" onclick="copyFunnelValue('tracking-url-{{ $link->id }}')" title="Copy tracking URL"><i class="fas fa-copy"></i></button></div></div>
+                    <label class="funnel-check funnel-link-active"><input type="checkbox" name="is_active" value="1" @checked($link->is_active)> Active</label>
+                    <div class="funnel-link-actions"><button class="btn btn-sm btn-outline-primary" type="submit" title="Save tracking URL"><i class="fas fa-save"></i></button><button class="btn btn-sm btn-outline-danger" type="submit" form="delete-link-{{ $link->id }}" title="Delete tracking URL"><i class="fas fa-trash"></i></button></div>
+                </div>
+                <div class="funnel-link-fields">
+                    <div class="span-2"><label>Destination URL</label><input class="form-control" type="url" name="destination_url" value="{{ $link->destination_url }}" placeholder="Uses the event default funnel URL"></div>
+                    <div><label>Expires at</label><input class="form-control" type="datetime-local" name="expires_at" value="{{ optional($link->expires_at)->format('Y-m-d\TH:i') }}"></div>
+                    <div><label>Expired redirect URL</label><input class="form-control" type="url" name="expired_redirect_url" value="{{ $link->expired_redirect_url }}" placeholder="https://jeweal.com"></div>
+                    <div><label>Short code</label><input class="form-control" name="code" value="{{ $link->code }}" readonly></div>
+                    <div><label>Source</label><input class="form-control" name="source" value="{{ $link->source }}" placeholder="facebook"></div>
+                    <div><label>Medium</label><input class="form-control" name="medium" value="{{ $link->medium }}" placeholder="social"></div>
+                    <div><label>Content</label><input class="form-control" name="content" value="{{ $link->content }}" placeholder="hero-banner"></div>
+                </div>
             </form>
             <form id="delete-link-{{ $link->id }}" method="post" action="{{ route('gis-fair.links.destroy', [$campaign, $link]) }}" data-confirm="Delete this tracking URL? Existing attribution records will remain attached to the event." data-confirm-title="Delete tracking URL" data-confirm-tone="danger" data-confirm-button="Delete">@csrf @method('delete')</form>
         @empty
