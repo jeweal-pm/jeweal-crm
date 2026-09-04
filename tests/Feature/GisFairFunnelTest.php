@@ -48,12 +48,14 @@ class GisFairFunnelTest extends TestCase
             ->assertJsonPath('ok', true)
             ->assertJsonPath('duplicate', false)
             ->assertJsonPath('data.eventCode', 'bgjf-74')
+            ->assertJsonPath('data.status', 'prospect')
             ->assertJsonPath('data.remark', 'Interested in a product demonstration.');
 
         $lead = GisFairLead::firstOrFail();
         $this->assertSame($campaign->id, $lead->campaign_id);
         $this->assertSame($link->id, $lead->tracking_link_id);
         $this->assertSame($response->json('fairCode'), $lead->fair_code);
+        $this->assertSame('prospect', $lead->status);
         $this->assertSame('Interested in a product demonstration.', $lead->remark);
         $this->assertDatabaseHas('gis_fair_tracking_visits', [
             'token' => $query['ref'],
