@@ -65,10 +65,6 @@ class StoreGisFairLeadRequest extends FormRequest
             if (! in_array(strlen($digits), $allowed, true)) {
                 $validator->errors()->add('phone', 'The phone number length is not valid for the selected country.');
             }
-
-            if (strcasecmp((string) $this->input('country'), $country['name']) !== 0) {
-                $validator->errors()->add('country', 'The country does not match the selected phone country.');
-            }
         });
     }
 

@@ -26,6 +26,7 @@ class GisFairFunnelTest extends TestCase
             'campaign_id' => $campaign->id,
             'name' => 'Facebook launch',
             'code' => 'bgjf74-facebook',
+            'fair_code_prefix' => 'SOCIAL',
             'source' => 'facebook',
             'medium' => 'social',
             'is_active' => true,
@@ -55,6 +56,7 @@ class GisFairFunnelTest extends TestCase
         $this->assertSame($campaign->id, $lead->campaign_id);
         $this->assertSame($link->id, $lead->tracking_link_id);
         $this->assertSame($response->json('fairCode'), $lead->fair_code);
+        $this->assertStringStartsWith('SOCIAL-', $lead->fair_code);
         $this->assertSame('prospect', $lead->status);
         $this->assertSame('Interested in a product demonstration.', $lead->remark);
         $this->assertDatabaseHas('gis_fair_tracking_visits', [
@@ -130,6 +132,7 @@ class GisFairFunnelTest extends TestCase
         $lead = GisFairLead::firstOrFail();
         $this->assertSame(2, $lead->submission_count);
         $this->assertSame('Updated Company', $lead->company);
+        $this->assertStringStartsWith('GIS74-', $lead->fair_code);
         $this->assertSame('Please contact after the fair.', $lead->remark);
         $this->assertFalse($lead->marketing_consent);
         $this->assertNotNull($lead->marketing_consent_withdrawn_at);
@@ -169,6 +172,24 @@ class GisFairFunnelTest extends TestCase
         $this->assertDatabaseCount('gis_fair_leads', 0);
     }
 
+    public function test_lead_country_can_differ_from_the_phone_country(): void
+    {
+        $campaign = $this->campaign();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.46'])
+            ->postJson('/api/gis-fair-lead', $this->payload([
+                'eventCode' => $campaign->code,
+                'country' => 'Australia',
+            ]))
+            ->assertCreated();
+
+        $this->assertDatabaseHas('gis_fair_leads', [
+            'email' => 'somchai@example.com',
+            'country' => 'Australia',
+            'phone_iso' => 'TH',
+        ]);
+    }
+
     public function test_closed_event_rejects_registration_and_public_config_identifies_the_event(): void
     {
         $campaign = $this->campaign();
@@ -204,9 +225,21 @@ class GisFairFunnelTest extends TestCase
         $this->seed(GisFairFunnelSeeder::class);
         $campaign = GisFairCampaign::where('code', 'bgjf-74')->firstOrFail();
         $campaign->update(['status' => 'active', 'offer_deadline' => now()->addWeek()]);
+        $link = GisFairTrackingLink::create([
+            'campaign_id' => $campaign->id,
+            'name' => 'Partner fair campaign',
+            'code' => 'partner-fair-campaign',
+            'fair_code_prefix' => 'PARTNER',
+            'is_active' => true,
+        ]);
+        $redirect = $this->get(route('gis-fair.redirect', $link->code));
+        parse_str((string) parse_url($redirect->headers->get('Location'), PHP_URL_QUERY), $query);
 
         $response = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.49'])
-            ->postJson('/api/gis-fair-lead', $this->payload(['eventCode' => $campaign->code]))
+            ->postJson('/api/gis-fair-lead', $this->payload([
+                'eventCode' => $campaign->code,
+                'trackingToken' => $query['ref'],
+            ]))
             ->assertCreated();
 
         $this->assertDatabaseHas('email_templates', ['code' => 'gis-fair-registration-confirmation', 'status' => 'published']);
@@ -216,6 +249,9 @@ class GisFairFunnelTest extends TestCase
             'subject' => 'Your The 74th Bangkok Gems & Jewelry Fair fair code - '.$response->json('fairCode'),
             'status' => 'sent',
         ]);
+        $customerMessage = EmailMessage::where('message_type', 'transactional')->firstOrFail();
+        $this->assertStringStartsWith('PARTNER-', $response->json('fairCode'));
+        $this->assertStringContainsString($response->json('fairCode'), $customerMessage->html_content);
 
         $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.52'])
             ->postJson('/api/gis-fair-lead', $this->payload(['eventCode' => $campaign->code]))
@@ -256,6 +292,7 @@ class GisFairFunnelTest extends TestCase
                 'name' => 'Partner campaign',
                 'code' => 'partner-campaign',
                 'destination_url' => 'https://gis247.net/fair',
+                'fair_code_prefix' => 'PARTNER',
                 'expired_redirect_url' => 'https://gis247.net/events',
                 'expires_at' => now()->addDay()->format('Y-m-d H:i:s'),
                 'is_active' => true,
@@ -265,6 +302,7 @@ class GisFairFunnelTest extends TestCase
         $this->assertDatabaseHas('gis_fair_tracking_links', [
             'campaign_id' => $campaign->id,
             'code' => 'partner-campaign',
+            'fair_code_prefix' => 'PARTNER',
             'expired_redirect_url' => 'https://gis247.net/events',
         ]);
 

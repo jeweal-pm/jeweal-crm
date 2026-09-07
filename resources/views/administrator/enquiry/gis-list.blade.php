@@ -193,7 +193,7 @@
                             $phone = $isFairLead ? $row->phone_e164 : $row->phone_number;
                             $inquiry = $isFairLead ? ($row->campaign?->name ?: 'Fair registration') : $row->inquiry;
                             $message = $isFairLead
-                                ? (collect($row->interests)->filter()->isNotEmpty() ? 'Interests: '.collect($row->interests)->filter()->join(', ') : $row->current_system)
+                                ? $row->remark
                                 : $row->message;
                             $assignRoute = $isFairLead ? route('gis-fair.leads.assign', $row) : route('gis-enquiries.assign', $row->id);
                             $statusRoute = $isFairLead ? route('gis-fair.leads.status', $row) : route('gis-enquiries.status', $row->id);

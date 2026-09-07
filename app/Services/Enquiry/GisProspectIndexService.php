@@ -78,8 +78,11 @@ class GisProspectIndexService
 
     public static function scopeFairPrefix(Builder $query): Builder
     {
-        return $query->whereHas('campaign', function (Builder $query) {
-            $query->whereRaw('LOWER(code_prefix) = ?', ['gis']);
+        return $query->where(function (Builder $query) {
+            $query->where('source', 'gis-fair-funnel')
+                ->orWhereHas('campaign', function (Builder $query) {
+                    $query->whereRaw('LOWER(code_prefix) = ?', ['gis']);
+                });
         });
     }
 

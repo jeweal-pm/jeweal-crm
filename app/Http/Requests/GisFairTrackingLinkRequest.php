@@ -21,6 +21,7 @@ class GisFairTrackingLinkRequest extends FormRequest
             'code' => ['required', 'alpha_dash', 'max:64', Rule::unique('gis_fair_tracking_links', 'code')->ignore($linkId)],
             'destination_url' => ['nullable', 'url:http,https', 'max:2000'],
             'expired_redirect_url' => ['nullable', 'url:http,https', 'max:2000'],
+            'fair_code_prefix' => ['nullable', 'alpha_num', 'max:12'],
             'source' => ['nullable', 'string', 'max:80'],
             'medium' => ['nullable', 'string', 'max:80'],
             'content' => ['nullable', 'string', 'max:120'],
@@ -33,6 +34,9 @@ class GisFairTrackingLinkRequest extends FormRequest
     {
         $this->merge([
             'code' => strtolower(trim((string) $this->input('code'))),
+            'fair_code_prefix' => $this->filled('fair_code_prefix')
+                ? strtoupper(trim((string) $this->input('fair_code_prefix')))
+                : null,
             'is_active' => $this->boolean('is_active'),
         ]);
     }
