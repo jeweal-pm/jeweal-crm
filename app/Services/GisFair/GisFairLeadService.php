@@ -4,6 +4,7 @@ namespace App\Services\GisFair;
 
 use App\Models\GisFairCampaign;
 use App\Models\GisFairLead;
+use App\Models\GisFairTrackingLink;
 use App\Models\GisFairTrackingVisit;
 use App\Models\User;
 use App\Services\Email\EnquiryEmailAutomationService;
@@ -107,7 +108,7 @@ class GisFairLeadService
                     'campaign_id' => $campaign->id,
                     'tracking_link_id' => $visit?->tracking_link_id,
                     'tracking_visit_token' => $visit?->token,
-                    'fair_code' => $this->fairCode($campaign),
+                    'fair_code' => $this->fairCode($campaign, $visit?->trackingLink),
                     'submission_count' => 1,
                     'privacy_agreed_at' => $now,
                     'marketing_consent_at' => $marketingConsent ? $now : null,
@@ -225,9 +226,13 @@ class GisFairLeadService
         return ['local' => $local, 'dial' => $country['dial'], 'e164' => '+'.$country['dial'].$nsn];
     }
 
-    private function fairCode(GisFairCampaign $campaign): string
+    private function fairCode(GisFairCampaign $campaign, ?GisFairTrackingLink $trackingLink = null): string
     {
-        $prefix = Str::upper(preg_replace('/[^A-Za-z0-9]/', '', $campaign->code_prefix));
+        $prefix = Str::upper(preg_replace(
+            '/[^A-Za-z0-9]/',
+            '',
+            $trackingLink?->fair_code_prefix ?: $campaign->code_prefix
+        ));
 
         do {
             $code = $prefix.'-'.Str::upper(Str::random(6));

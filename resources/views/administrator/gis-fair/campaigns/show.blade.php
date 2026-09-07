@@ -47,6 +47,7 @@
                     <div><label>Expires at</label><input class="form-control" type="datetime-local" name="expires_at" value="{{ optional($link->expires_at)->format('Y-m-d\TH:i') }}"></div>
                     <div><label>Expired redirect URL</label><input class="form-control" type="url" name="expired_redirect_url" value="{{ $link->expired_redirect_url }}" placeholder="https://jeweal.com"></div>
                     <div><label>Short code</label><input class="form-control" name="code" value="{{ $link->code }}" readonly></div>
+                    <div><label>Fair code prefix</label><input class="form-control" name="fair_code_prefix" value="{{ $link->fair_code_prefix }}" placeholder="{{ $campaign->code_prefix }}"><div class="funnel-help">Blank uses the event default: {{ $campaign->code_prefix }}.</div></div>
                     <div><label>Source</label><input class="form-control" name="source" value="{{ $link->source }}" placeholder="facebook"></div>
                     <div><label>Medium</label><input class="form-control" name="medium" value="{{ $link->medium }}" placeholder="social"></div>
                     <div><label>Content</label><input class="form-control" name="content" value="{{ $link->content }}" placeholder="hero-banner"></div>
@@ -65,6 +66,7 @@
             <div><label for="link-name">Name</label><input id="link-name" class="form-control" name="name" value="{{ old('name') }}" placeholder="Facebook launch post" required></div>
             <div><label for="link-code">Short code</label><input id="link-code" class="form-control" name="code" value="{{ old('code') }}" placeholder="bgjf74-facebook" required></div>
             <div><label for="link-destination">Destination override</label><input id="link-destination" class="form-control" type="url" name="destination_url" value="{{ old('destination_url') }}" placeholder="Uses event funnel URL"></div>
+            <div><label for="link-fair-code-prefix">Fair code prefix</label><input id="link-fair-code-prefix" class="form-control" name="fair_code_prefix" value="{{ old('fair_code_prefix') }}" placeholder="{{ $campaign->code_prefix }}"><div class="funnel-help">Blank uses the event default: {{ $campaign->code_prefix }}.</div></div>
             <div><label for="link-source">Source</label><input id="link-source" class="form-control" name="source" value="{{ old('source') }}" placeholder="facebook"></div>
             <div><label for="link-medium">Medium</label><input id="link-medium" class="form-control" name="medium" value="{{ old('medium') }}" placeholder="social"></div>
             <div><label for="link-content">Content</label><input id="link-content" class="form-control" name="content" value="{{ old('content') }}" placeholder="launch-post"></div>

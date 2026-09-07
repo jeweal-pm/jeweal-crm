@@ -70,6 +70,24 @@ class GisProspectMergeTest extends TestCase
         $this->assertSame('sql', $fairLead->fresh()->status);
     }
 
+    public function test_gis_workspace_includes_fair_funnel_source_and_displays_the_remark(): void
+    {
+        $actor = $this->rootUser();
+        $fairLead = $this->fairLead(
+            $this->campaign('OTHER', 'source-based-event'),
+            'Source',
+            'Funnel',
+            ['source' => 'gis-fair-funnel', 'remark' => 'Requested a product demo at the event.']
+        );
+
+        $this->actingAs($actor)
+            ->get(route('gisEnquiry'))
+            ->assertOk()
+            ->assertSee('Source Funnel')
+            ->assertSee('Requested a product demo at the event.')
+            ->assertSee('fair-funnel');
+    }
+
     public function test_mixed_bulk_action_cannot_target_a_fair_lead_outside_the_gis_prefix(): void
     {
         $actor = $this->rootUser();
