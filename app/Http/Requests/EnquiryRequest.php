@@ -35,6 +35,8 @@ class EnquiryRequest extends FormRequest
             'description' => 'nullable|string|max:2000',
             'interest_in' => 'required|array',
             'interest_in.*' => 'string|max:80',
+            'privacy_policy_accepted' => 'sometimes|boolean',
+            'marketing_consent' => 'sometimes|boolean',
         ];
     }
 

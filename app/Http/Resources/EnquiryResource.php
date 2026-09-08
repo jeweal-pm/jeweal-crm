@@ -19,6 +19,8 @@ class EnquiryResource extends JsonResource
             'company_website' => $this->company_website,
             'description' => $this->description,
             'interest_in' => $this->interest_in,
+            'privacy_policy_accepted' => $this->privacy_policy_accepted,
+            'marketing_consent' => $this->marketing_consent,
             'status' => $this->status,
             'assigned_to' => $this->assigned_to,
             'assigned_at' => $this->assigned_at,

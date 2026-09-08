@@ -49,6 +49,34 @@ class EnquiryWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_public_enquiry_submission_stores_consent_fields(): void
+    {
+        $payload = [
+            'name' => 'Consent Lead',
+            'business_type' => ['retail'],
+            'email' => 'consent@example.com',
+            'country' => 'Thailand',
+            'phone' => '+66812345678',
+            'company' => 'Consent Co',
+            'company_website' => 'https://example.com',
+            'description' => 'Consent test',
+            'interest_in' => ['crm'],
+            'privacy_policy_accepted' => true,
+            'marketing_consent' => true,
+        ];
+
+        $this->postJson('/api/enquiry', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.privacy_policy_accepted', true)
+            ->assertJsonPath('data.marketing_consent', true);
+
+        $this->assertDatabaseHas('enquiries', [
+            'email' => 'consent@example.com',
+            'privacy_policy_accepted' => true,
+            'marketing_consent' => true,
+        ]);
+    }
+
     public function test_sale_filter_only_returns_assigned_enquiries(): void
     {
         $this->seed(RolePermissionSeeder::class);
