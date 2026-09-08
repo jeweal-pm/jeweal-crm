@@ -32,7 +32,7 @@ class EmailSubscriberService
 
     public function context(Model $enquiry, string $type): array
     {
-        if (in_array($type, ['gis', 'gis_fair'], true)) {
+        if (in_array($type, ['gis', 'gis_fair', 'gms_fair', 'jeweal_fair'], true)) {
             return [
                 'email' => $enquiry->email,
                 'first_name' => $enquiry->first_name,

@@ -10,10 +10,13 @@ class EmailSenderResolver
             return $override;
         }
 
-        $type = in_array($enquiryType, ['general', 'gis', 'gms'], true) ? $enquiryType : 'general';
-        if ($enquiryType === 'gis_fair') {
-            $type = 'gis';
-        }
+        $type = match ($enquiryType) {
+            'gis_fair' => 'gis',
+            'gms_fair' => 'gms',
+            'jeweal_fair' => 'general',
+            'general', 'gis', 'gms' => $enquiryType,
+            default => 'general',
+        };
 
         return config('email_management.sender_addresses.'.$type)
             ?: config('mail.from.address');

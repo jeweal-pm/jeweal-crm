@@ -6,6 +6,7 @@ use App\Models\EmailSegment;
 use App\Models\EmailSubscriber;
 use App\Models\Enquiry;
 use App\Models\GisEnquiry;
+use App\Models\GisFairLead;
 use App\Models\GmsStoneEnquiry;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -26,7 +27,10 @@ class EmailSegmentService
         if (! empty($conditions['customer_status'])) {
             $sourceType = $conditions['source_type'] ?? 'general';
             $model = match ($sourceType) {
-                'gis' => GisEnquiry::class, 'gms' => GmsStoneEnquiry::class, default => Enquiry::class,
+                'gis' => GisEnquiry::class,
+                'gms' => GmsStoneEnquiry::class,
+                'gis_fair', 'gms_fair', 'jeweal_fair' => GisFairLead::class,
+                default => Enquiry::class,
             };
             $ids = $model::query()->where('status', $conditions['customer_status'])->pluck('id');
             $query->where('source_type', $sourceType)->whereIn('source_id', $ids);
