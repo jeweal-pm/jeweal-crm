@@ -25,6 +25,8 @@ class Enquiry extends Model implements EnquirableContract
         'company_website',
         'description',
         'interest_in',
+        'privacy_policy_accepted',
+        'marketing_consent',
     ];
 
     protected $attributes = [
@@ -36,6 +38,8 @@ class Enquiry extends Model implements EnquirableContract
     protected $casts = [
         'business_type' => Json::class,
         'interest_in' => Json::class,
+        'privacy_policy_accepted' => 'boolean',
+        'marketing_consent' => 'boolean',
         'assigned_at' => 'datetime',
         'closed_at' => 'datetime',
         'counts_for_sale_kpi' => 'boolean',
