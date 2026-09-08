@@ -46,7 +46,7 @@ class GisFairLeadService
         try {
             $queued = $this->emailAutomation->dispatchFor(
                 $lead->load('assignedTo'),
-                'gis_fair',
+                $this->emailTypeForSource($lead->source),
                 ! $created,
                 $created
             );
@@ -68,7 +68,12 @@ class GisFairLeadService
 
     public function resendConfirmation(GisFairLead $lead, ?User $actor = null): void
     {
-        $queued = $this->emailAutomation->dispatchFor($lead->load('assignedTo'), 'gis_fair', true, false);
+        $queued = $this->emailAutomation->dispatchFor(
+            $lead->load('assignedTo'),
+            $this->emailTypeForSource($lead->source),
+            true,
+            false
+        );
         if (! $queued['customer']?->exists) {
             throw new HttpException(422, 'The fair confirmation email is not configured.');
         }
@@ -84,6 +89,15 @@ class GisFairLeadService
             $lead->status,
             $lead->status
         );
+    }
+
+    private function emailTypeForSource(?string $source): string
+    {
+        return match ($source) {
+            'gms_funnel' => 'gms_fair',
+            'gis-fair-funnel' => 'gis_fair',
+            default => 'jeweal_fair',
+        };
     }
 
     private function persist(
@@ -231,7 +245,7 @@ class GisFairLeadService
         $prefix = Str::upper(preg_replace(
             '/[^A-Za-z0-9]/',
             '',
-            $trackingLink?->fair_code_prefix ?: $campaign->code_prefix
+            $trackingLink?->fair_code_prefix ?: $campaign->code
         ));
 
         do {

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\EmailAutomationConfig;
 use App\Models\EmailMessage;
+use App\Models\EmailTemplate;
 use App\Models\GisFairCampaign;
 use App\Models\GisFairLead;
 use App\Models\GisFairTrackingLink;
@@ -132,7 +133,7 @@ class GisFairFunnelTest extends TestCase
         $lead = GisFairLead::firstOrFail();
         $this->assertSame(2, $lead->submission_count);
         $this->assertSame('Updated Company', $lead->company);
-        $this->assertStringStartsWith('GIS74-', $lead->fair_code);
+        $this->assertStringStartsWith('BGJF74-', $lead->fair_code);
         $this->assertSame('Please contact after the fair.', $lead->remark);
         $this->assertFalse($lead->marketing_consent);
         $this->assertNotNull($lead->marketing_consent_withdrawn_at);
@@ -239,6 +240,7 @@ class GisFairFunnelTest extends TestCase
             ->postJson('/api/gis-fair-lead', $this->payload([
                 'eventCode' => $campaign->code,
                 'trackingToken' => $query['ref'],
+                'source' => 'gis-fair-funnel',
             ]))
             ->assertCreated();
 
@@ -260,6 +262,39 @@ class GisFairFunnelTest extends TestCase
 
         $this->assertSame(2, EmailMessage::where('message_type', 'transactional')->count());
         $this->assertSame(2, GisFairLead::firstOrFail()->confirmation_send_count);
+    }
+
+    public function test_source_selects_the_matching_fair_email_brand(): void
+    {
+        Mail::fake();
+        $this->seed(GisFairFunnelSeeder::class);
+        $campaign = GisFairCampaign::where('code', 'bgjf-74')->firstOrFail();
+        $campaign->update(['status' => 'active', 'offer_deadline' => now()->addWeek()]);
+
+        $cases = [
+            ['source' => 'gms_funnel', 'email' => 'gms-fair@example.com', 'template' => 'gms-fair-registration-confirmation', 'color' => '#00453F'],
+            ['source' => 'gis-fair-funnel', 'email' => 'gis-fair@example.com', 'template' => 'gis-fair-registration-confirmation', 'color' => '#8ed8d4'],
+            ['source' => 'design_jeweal', 'email' => 'jeweal-fair@example.com', 'template' => 'jeweal-fair-registration-confirmation', 'color' => '#1a1c4a'],
+            ['source' => 'design_2', 'email' => 'default-fair@example.com', 'template' => 'jeweal-fair-registration-confirmation', 'color' => '#1a1c4a'],
+        ];
+
+        foreach ($cases as $index => $case) {
+            $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.'.(60 + $index)])
+                ->postJson('/api/gis-fair-lead', $this->payload([
+                    'email' => $case['email'],
+                    'source' => $case['source'],
+                    'eventCode' => $campaign->code,
+                ]))
+                ->assertCreated();
+
+            $this->assertDatabaseHas('email_messages', [
+                'to_email' => $case['email'],
+                'email_template_id' => EmailTemplate::where('code', $case['template'])->value('id'),
+            ]);
+
+            $message = EmailMessage::where('to_email', $case['email'])->where('message_type', 'transactional')->firstOrFail();
+            $this->assertStringContainsString($case['color'], $message->html_content);
+        }
     }
 
     public function test_public_funnel_api_handles_cors_preflight(): void

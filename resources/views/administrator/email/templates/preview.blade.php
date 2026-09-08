@@ -29,7 +29,7 @@
                             <form method="post" action="{{ route('email.templates.test-send', $template->id) }}">
                                 @csrf
                                 <div class="form-group"><label>Test recipient</label><input class="form-control" type="email" name="email" required placeholder="you@example.com"></div>
-                                <div class="form-group"><label>Sender type</label><select class="form-control" name="enquiry_type"><option value="general">General</option><option value="gis">GIS</option><option value="gms">GMS</option></select></div>
+                                <div class="form-group"><label>Sender type</label><select class="form-control" name="enquiry_type"><option value="general">General / Jeweal</option><option value="gis">GIS</option><option value="gms">GMS</option><option value="gis_fair">GIS Fair</option><option value="gms_fair">GMS Fair</option><option value="jeweal_fair">Jeweal Fair</option></select></div>
                                 <button class="btn btn-primary btn-block" type="submit"><i class="fas fa-paper-plane"></i> Send test email</button>
                             </form>
                         </div>

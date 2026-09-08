@@ -181,7 +181,7 @@ class EmailManagementController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'], 'code' => ['required', 'alpha_dash', 'max:100'],
             'segment_type' => ['required', 'in:dynamic,static'], 'subscription_status' => ['nullable', 'string'],
-            'source_type' => ['nullable', 'in:general,gis,gms,gis_fair'], 'customer_status' => ['nullable', 'in:lead_mql,sql,prospect,customer'],
+            'source_type' => ['nullable', 'in:general,gis,gms,gis_fair,gms_fair,jeweal_fair'], 'customer_status' => ['nullable', 'in:lead_mql,sql,prospect,customer'],
             'created_after_days' => ['nullable', 'integer', 'min:1'],
         ]);
         $conditions = array_filter(Arr::only($data, ['subscription_status', 'source_type', 'customer_status', 'created_after_days']), fn ($value) => $value !== null && $value !== '');
