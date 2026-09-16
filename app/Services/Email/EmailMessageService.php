@@ -23,13 +23,14 @@ class EmailMessageService
         ?string $idempotencyKey = null,
         ?int $delaySeconds = null,
         array $relations = [],
-        array $overrides = []
+        array $overrides = [],
+        bool $respectSubscriberFrequencyLimits = true
     ): EmailMessage {
         if ($messageType === 'marketing' && ! $subscriber->canReceiveMarketing($template->category)) {
             return new EmailMessage(['status' => 'suppressed']);
         }
 
-        if ($messageType === 'marketing' && ! $this->withinFrequencyLimits($subscriber)) {
+        if ($messageType === 'marketing' && ! $this->withinFrequencyLimits($subscriber, $respectSubscriberFrequencyLimits)) {
             return new EmailMessage(['status' => 'deferred']);
         }
 
@@ -49,7 +50,7 @@ class EmailMessageService
             'cc' => array_values($recipients['cc'] ?? []),
             'bcc' => array_values($recipients['bcc'] ?? []),
             'subject' => $overrides['subject'] ?? $rendered['subject'],
-            'html_content' => $this->withTracking($rendered['html_content'], $messageId, $subscriber),
+            'html_content' => $this->withTracking($overrides['html_content'] ?? $rendered['html_content'], $messageId, $subscriber),
             'plain_text_content' => $rendered['plain_text_content'],
             'status' => 'queued',
             'queued_at' => now(),
@@ -78,7 +79,7 @@ class EmailMessageService
         return $html.'<img src="'.e(url('/email-track/open/'.$messageId)).'" width="1" height="1" alt="" style="display:none" />';
     }
 
-    private function withinFrequencyLimits(EmailSubscriber $subscriber): bool
+    private function withinFrequencyLimits(EmailSubscriber $subscriber, bool $respectSubscriberFrequencyLimits = true): bool
     {
         $now = now()->timezone(config('email_management.timezone'));
         $start = $now->copy()->setTimeFromTimeString(config('email_management.quiet_hours_start'));
@@ -88,6 +89,19 @@ class EmailMessageService
             : $now->gte($start) || $now->lte($end);
         if ($quiet) {
             return false;
+        }
+
+        $global = \App\Models\EmailMessage::query()
+            ->where('message_type', 'marketing')
+            ->where('created_at', '>=', now()->startOfDay())
+            ->count();
+
+        if ($global >= config('email_management.daily_sending_limit')) {
+            return false;
+        }
+
+        if (! $respectSubscriberFrequencyLimits) {
+            return true;
         }
 
         $daily = $subscriber->messages()
@@ -101,13 +115,7 @@ class EmailMessageService
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
 
-        $global = \App\Models\EmailMessage::query()
-            ->where('message_type', 'marketing')
-            ->where('created_at', '>=', now()->startOfDay())
-            ->count();
-
-        return $global < config('email_management.daily_sending_limit')
-            && $daily < config('email_management.marketing_daily_limit')
+        return $daily < config('email_management.marketing_daily_limit')
             && $weekly < config('email_management.marketing_weekly_limit');
     }
 }

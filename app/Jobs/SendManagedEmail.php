@@ -46,16 +46,21 @@ class SendManagedEmail implements ShouldQueue
             foreach ($message->bcc ?: [] as $email) {
                 $mail->bcc($email);
             }
-            $senderEmail = app(EmailSenderResolver::class)->resolve(
+            $senders = app(EmailSenderResolver::class);
+            $senderEmail = $senders->resolve(
                 $message->subscriber?->source_type,
                 $message->template?->sender_email
+            );
+            $senderName = $senders->resolveName(
+                $message->subscriber?->source_type,
+                $message->template?->sender_name
             );
             $mailable = new ManagedEmailMailable(
                 $message->html_content,
                 $message->plain_text_content ?: strip_tags($message->html_content),
                 $message->subject,
                 $senderEmail,
-                $message->template?->sender_name,
+                $senderName,
                 $message->template?->reply_to_email,
                 $message->message_id
             );

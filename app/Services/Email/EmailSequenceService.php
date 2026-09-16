@@ -7,8 +7,11 @@ use Illuminate\Support\Carbon;
 
 class EmailSequenceService
 {
-    public function __construct(private EmailMessageService $messages)
-    {
+    public function __construct(
+        private EmailMessageService $messages,
+        private EmailTemplateRenderer $renderer,
+        private EmailBrandingService $branding
+    ) {
     }
 
     public function processDue(): int
@@ -66,24 +69,34 @@ class EmailSequenceService
             return false;
         }
 
+        $data = [
+            'first_name' => $subscriber->first_name,
+            'last_name' => $subscriber->last_name,
+            'email' => $subscriber->email,
+            'company_name' => $subscriber->company_name,
+            'enquiry_number' => strtoupper((string) $subscriber->source_type).'-'.$subscriber->source_id,
+            'enquiry_type' => $subscriber->source_type,
+            'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
+            'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
+        ];
+        $rendered = $this->renderer->render($step->template, $data);
+        $html = $this->branding->wrap(
+            $rendered['html_content'],
+            $subscriber->source_type,
+            $step->template->name.' '.$step->template->code.' '.$enrollment->sequence->name.' '.$enrollment->sequence->code
+        );
+
         $message = $this->messages->queue(
             $subscriber,
             $step->template,
-            [
-                'first_name' => $subscriber->first_name,
-                'last_name' => $subscriber->last_name,
-                'email' => $subscriber->email,
-                'company_name' => $subscriber->company_name,
-                'enquiry_number' => strtoupper((string) $subscriber->source_type).'-'.$subscriber->source_id,
-                'enquiry_type' => $subscriber->source_type,
-                'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
-                'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
-            ],
+            $data,
             'marketing',
             [],
             'enrollment:'.$enrollment->id.':step:'.$step->step_number,
             null,
-            ['enrollment_id' => $enrollment->id, 'step_id' => $step->id]
+            ['enrollment_id' => $enrollment->id, 'step_id' => $step->id],
+            ['html_content' => $html],
+            false
         );
 
         if (! in_array($message->status, ['queued', 'processing', 'sent', 'delivered'], true)) {

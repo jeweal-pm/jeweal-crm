@@ -213,7 +213,7 @@ HTML;
                 'html_content' => $html,
                 'plain_text_content' => $plainText[$code] ?? 'Dear {{first_name}},\n\nThank you for your enquiry. Reference: {{enquiry_number}}\n\nBest regards,\n{{sales_owner_name}}',
                 'status' => 'published',
-                'sender_name' => str_starts_with($code, 'gis-') ? 'GIS Manage Pro' : (str_starts_with($code, 'gms-') ? 'GMS Stone' : (str_starts_with($code, 'general-') ? 'Jeweal' : null)),
+                'sender_name' => str_starts_with($code, 'gis-') ? 'GIS247' : (str_starts_with($code, 'gms-') ? 'GMS Stone' : (str_starts_with($code, 'general-') ? 'Jeweal' : null)),
                 'variables' => ['first_name', 'last_name', 'email', 'company_name', 'enquiry_number', 'enquiry_type', 'submitted_at', 'sales_owner_name', 'unsubscribe_url', 'country', 'phone', 'inquiry', 'message'],
             ]);
             $ids[$subjectType] = $template->id;

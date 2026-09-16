@@ -53,7 +53,7 @@ class EmailTemplateManagementTest extends TestCase
         ]);
 
         $this->actingAs($user)->post(route('email.templates.test-send', $template->id), ['email' => 'qa@example.com', 'enquiry_type' => 'gis'])->assertRedirect();
-        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->hasTo('qa@example.com') && $mail->senderEmail === 'gis@jeweal.co.th');
+        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->hasTo('qa@example.com') && $mail->senderEmail === 'gis@jeweal.co.th' && $mail->senderName === 'GIS247');
     }
 
     public function test_template_with_unknown_variable_cannot_be_published(): void
