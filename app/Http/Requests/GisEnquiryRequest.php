@@ -30,6 +30,8 @@ class GisEnquiryRequest extends FormRequest
             'phone_number' => ['required', 'string', 'max:50', 'regex:/^[0-9+\-\s().]+$/'],
             'inquiry' => 'required|string|max:100',
             'message' => 'nullable|string|max:2000',
+            'privacy_policy_accepted' => 'sometimes|boolean',
+            'marketing_consent' => 'sometimes|boolean',
         ];
     }
 

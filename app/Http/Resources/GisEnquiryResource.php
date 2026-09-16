@@ -16,6 +16,8 @@ class GisEnquiryResource extends JsonResource
             'phone_number' => $this->phone_number,
             'inquiry' => $this->inquiry,
             'message' => $this->message,
+            'privacy_policy_accepted' => $this->privacy_policy_accepted,
+            'marketing_consent' => $this->marketing_consent,
             'status' => $this->status,
             'assigned_to' => $this->assigned_to,
             'assigned_at' => $this->assigned_at,
