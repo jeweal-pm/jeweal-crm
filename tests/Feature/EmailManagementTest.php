@@ -18,14 +18,28 @@ class EmailManagementTest extends TestCase
     {
         $template = EmailTemplate::create([
             'name' => 'Test', 'code' => 'test-template', 'email_type' => 'transactional', 'category' => 'welcome',
-            'subject' => 'Hello {{first_name}}', 'html_content' => '<p>{{email}}</p><script>alert(1)</script>', 'status' => 'draft',
+            'subject' => 'Hello {{first_name}}', 'html_content' => '<style>.card { padding: 24px; }</style><div class="card">{{email}}</div><script>alert(1)</script>', 'status' => 'draft',
             'unsubscribe_token_hash' => null,
         ]);
 
         $rendered = app(EmailTemplateRenderer::class)->render($template, ['first_name' => 'A', 'email' => 'a@example.com']);
         $this->assertSame('Hello A', $rendered['subject']);
         $this->assertStringNotContainsString('<script>', $rendered['html_content']);
+        $this->assertStringContainsString('<style>.card { padding: 24px; }</style>', $rendered['html_content']);
         $this->assertStringContainsString('a@example.com', $rendered['html_content']);
+    }
+
+    public function test_plain_html_content_keeps_paragraph_spacing(): void
+    {
+        $template = EmailTemplate::create([
+            'name' => 'Plain HTML spacing', 'code' => 'plain-html-spacing', 'email_type' => 'marketing', 'category' => 'follow_up',
+            'subject' => 'Follow up', 'html_content' => "Dear {{first_name}}\n\nWe are following up on your enquiry.", 'status' => 'draft',
+        ]);
+
+        $rendered = app(EmailTemplateRenderer::class)->render($template, ['first_name' => 'A']);
+
+        $this->assertStringContainsString('<p style="margin:0 0 16px;line-height:1.6;">Dear A</p>', $rendered['html_content']);
+        $this->assertStringContainsString('We are following up on your enquiry.', $rendered['html_content']);
     }
 
     public function test_message_is_idempotent_and_tracking_urls_are_added(): void
