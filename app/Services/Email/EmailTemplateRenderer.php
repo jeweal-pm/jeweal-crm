@@ -26,7 +26,7 @@ class EmailTemplateRenderer
 
         return [
             'subject' => $subject,
-            'html_content' => $this->sanitize($html),
+            'html_content' => $this->formatHtml($this->sanitize($html)),
             'plain_text_content' => trim(strip_tags($plain)),
             'missing_variables' => $this->missing($template, $data),
         ];
@@ -41,11 +41,45 @@ class EmailTemplateRenderer
 
     public function sanitize(string $html): string
     {
-        $html = preg_replace('/<\s*(script|style|iframe|object|embed|form)[^>]*>.*?<\s*\/\s*\1\s*>/is', '', $html);
+        $html = preg_replace('/<\s*(script|iframe|object|embed|form)[^>]*>.*?<\s*\/\s*\1\s*>/is', '', $html);
         $html = preg_replace('/\son[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $html);
         $html = preg_replace('/(href|src)\s*=\s*(["\'])\s*javascript:[^"\']*\2/i', '$1="#"', $html);
 
-        return strip_tags($html, '<a><abbr><b><br><div><em><h1><h2><h3><hr><i><img><li><ol><p><span><strong><table><tbody><td><tfoot><th><thead><tr><u><ul>');
+        $html = preg_replace_callback('/\sstyle\s*=\s*(["\'])(.*?)\1/is', function (array $matches) {
+            return ' style="'.$this->sanitizeCss($matches[2]).'"';
+        }, $html);
+        $html = preg_replace('/\sstyle\s*=\s*(?!["\'])[^\s>]+/i', '', $html);
+        $html = preg_replace_callback('/<\s*style\b[^>]*>(.*?)<\s*\/\s*style\s*>/is', function (array $matches) {
+            return '<style>'.$this->sanitizeCss($matches[1]).'</style>';
+        }, $html);
+
+        return strip_tags($html, '<a><abbr><b><br><div><em><h1><h2><h3><hr><i><img><li><ol><p><span><strong><style><table><tbody><td><tfoot><th><thead><tr><u><ul>');
+    }
+
+    private function formatHtml(string $html): string
+    {
+        $visibleHtml = preg_replace('/<\s*style\b[^>]*>.*?<\s*\/\s*style\s*>/is', '', $html);
+        if (trim(strip_tags($visibleHtml)) === '' || preg_match('/<\s*(a|abbr|b|br|div|em|h[1-3]|hr|i|img|li|ol|p|span|strong|table|u|ul)\b/i', $visibleHtml)) {
+            return $html;
+        }
+
+        $paragraphs = preg_split('/(?:\r\n|\r|\n){2,}/', trim($visibleHtml)) ?: [];
+        preg_match_all('/<\s*style\b[^>]*>.*?<\s*\/\s*style\s*>/is', $html, $styleMatches);
+        $styleBlocks = implode('', $styleMatches[0] ?? []);
+
+        return $styleBlocks.implode('', array_map(function (string $paragraph): string {
+            return '<p style="margin:0 0 16px;line-height:1.6;">'.nl2br($paragraph).'</p>';
+        }, $paragraphs));
+    }
+
+    private function sanitizeCss(string $css): string
+    {
+        $css = preg_replace('/@import\b[^;]+;?/i', '', $css);
+        $css = preg_replace('/(?:expression|javascript|vbscript)\s*:[^;)}]+/i', '', $css);
+        $css = preg_replace('/(?:behavior|-moz-binding)\s*:[^;]+;?/i', '', $css);
+        $css = preg_replace('/url\s*\(\s*["\']?\s*(?:javascript|vbscript):[^)]*\)/i', '', $css);
+
+        return trim($css);
     }
 
     private function replace(?string $content, array $values, bool $escapeHtml = true): string
