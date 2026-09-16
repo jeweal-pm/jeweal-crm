@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\EmailEnrollment;
+use App\Models\EmailMessage;
 use App\Models\EmailSequenceStep;
 use App\Models\EmailSequenceTemplate;
 use App\Models\EmailSubscriber;
@@ -93,6 +94,152 @@ class EmailSequenceTest extends TestCase
             'id' => $enrollment->id,
             'status' => 'completed',
             'current_step' => 2,
+        ]);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_gis_sequence_adds_the_fair_branding_to_an_unbranded_template(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-07-23 12:00:00'));
+        config([
+            'email_management.quiet_hours_start' => '21:00',
+            'email_management.quiet_hours_end' => '08:00',
+            'email_management.marketing_daily_limit' => 100,
+            'email_management.marketing_weekly_limit' => 100,
+        ]);
+        Mail::fake();
+
+        $template = EmailTemplate::create([
+            'name' => 'GIS follow-up',
+            'code' => 'gis-follow-up',
+            'email_type' => 'marketing',
+            'category' => 'follow_up',
+            'subject' => 'A quick follow-up on your GIS enquiry',
+            'html_content' => '<p>Dear {{first_name}},</p><p>We are following up on your enquiry.</p>',
+            'status' => 'published',
+        ]);
+        $sequence = EmailSequenceTemplate::create(['name' => 'GIS follow-up sequence', 'code' => 'gis-follow-up-sequence', 'status' => 'published']);
+        $step = EmailSequenceStep::create([
+            'email_sequence_template_id' => $sequence->id,
+            'step_number' => 1,
+            'email_template_id' => $template->id,
+            'delay_value' => 0,
+            'delay_unit' => 'minutes',
+        ]);
+        $subscriber = EmailSubscriber::create([
+            'email' => 'gis-follow-up@example.com',
+            'first_name' => 'GIS',
+            'source_type' => 'gis',
+            'source_id' => 1,
+            'subscription_status' => 'subscribed',
+            'unsubscribe_token_hash' => hash('sha256', 'gis-follow-up'),
+        ]);
+        $enrollment = EmailEnrollment::create([
+            'email_subscriber_id' => $subscriber->id,
+            'email_sequence_template_id' => $sequence->id,
+            'current_step' => 1,
+            'status' => 'active',
+            'enrolled_at' => now(),
+            'next_scheduled_at' => now(),
+        ]);
+
+        app(\App\Services\Email\EmailSequenceService::class)->processEnrollment($enrollment);
+
+        $this->assertDatabaseHas('email_messages', [
+            'email_enrollment_id' => $enrollment->id,
+            'status' => 'sent',
+        ]);
+        $message = \App\Models\EmailMessage::where('email_enrollment_id', $enrollment->id)->firstOrFail();
+        $this->assertStringContainsString('https://gis247.net/assets/v2/images/gis-xl-logo.png', $message->html_content);
+        $this->assertStringContainsString('background:#8ed8d4', $message->html_content);
+        $this->assertStringContainsString('We are following up on your enquiry.', $message->html_content);
+        $this->assertSame(1, $step->step_number);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_sequence_sends_each_step_at_its_configured_delay_even_with_one_marketing_email_per_day(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-07-23 12:00:00'));
+        config([
+            'email_management.quiet_hours_start' => '21:00',
+            'email_management.quiet_hours_end' => '08:00',
+            'email_management.marketing_daily_limit' => 1,
+            'email_management.marketing_weekly_limit' => 3,
+            'email_management.daily_sending_limit' => 100,
+        ]);
+        Mail::fake();
+
+        $firstTemplate = EmailTemplate::create([
+            'name' => 'Sequence first email',
+            'code' => 'sequence-first-email',
+            'email_type' => 'marketing',
+            'category' => 'follow_up',
+            'subject' => 'First email',
+            'html_content' => '<p>First email</p>',
+            'status' => 'published',
+        ]);
+        $secondTemplate = EmailTemplate::create([
+            'name' => 'Sequence second email',
+            'code' => 'sequence-second-email',
+            'email_type' => 'marketing',
+            'category' => 'follow_up',
+            'subject' => 'Second email',
+            'html_content' => '<p>Second email</p>',
+            'status' => 'published',
+        ]);
+        $sequence = EmailSequenceTemplate::create([
+            'name' => 'Two-step sequence',
+            'code' => 'two-step-sequence',
+            'status' => 'published',
+        ]);
+        EmailSequenceStep::create([
+            'email_sequence_template_id' => $sequence->id,
+            'step_number' => 1,
+            'email_template_id' => $firstTemplate->id,
+            'delay_value' => 0,
+            'delay_unit' => 'minutes',
+        ]);
+        EmailSequenceStep::create([
+            'email_sequence_template_id' => $sequence->id,
+            'step_number' => 2,
+            'email_template_id' => $secondTemplate->id,
+            'delay_value' => 1,
+            'delay_unit' => 'minutes',
+        ]);
+        $subscriber = EmailSubscriber::create([
+            'email' => 'two-step@example.com',
+            'subscription_status' => 'subscribed',
+            'unsubscribe_token_hash' => hash('sha256', 'two-step'),
+        ]);
+        $enrollment = EmailEnrollment::create([
+            'email_subscriber_id' => $subscriber->id,
+            'email_sequence_template_id' => $sequence->id,
+            'status' => 'active',
+            'enrolled_at' => now(),
+            'next_scheduled_at' => now(),
+        ]);
+
+        Artisan::call('email:process-automation');
+        $enrollment->refresh();
+        $this->assertSame('active', $enrollment->status);
+        $this->assertSame(2, $enrollment->current_step);
+        $this->assertSame(1, EmailMessage::where('email_enrollment_id', $enrollment->id)->count());
+
+        Carbon::setTestNow(Carbon::parse('2026-07-23 12:01:00'));
+        Artisan::call('email:process-automation');
+
+        $this->assertDatabaseCount('email_messages', 2);
+        $this->assertDatabaseHas('email_messages', [
+            'email_enrollment_id' => $enrollment->id,
+            'subject' => 'Second email',
+            'status' => 'sent',
+        ]);
+        $this->assertDatabaseHas('email_enrollments', [
+            'id' => $enrollment->id,
+            'status' => 'completed',
+            'current_step' => 3,
         ]);
 
         Carbon::setTestNow();

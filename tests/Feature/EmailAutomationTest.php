@@ -103,7 +103,7 @@ class EmailAutomationTest extends TestCase
         $this->assertStringContainsString('GIS Manage Pro', $customerMessage->html_content);
         $this->assertStringContainsString('GIS Manage Pro', $internalMessage->html_content);
         $this->assertSame(['gis-cc@example.com'], $internalMessage->cc);
-        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gis@example.com');
+        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gis@example.com' && $mail->senderName === 'GIS247');
         Mail::assertSent(ManagedEmailMailable::class, 2);
     }
 
@@ -138,7 +138,7 @@ class EmailAutomationTest extends TestCase
         $this->assertStringContainsString('#00453F', $customerMessage->html_content);
         $this->assertStringContainsString('https://gms-stone.com/image/logo.png', $customerMessage->html_content);
         $this->assertStringContainsString('GMS Customer Co', $internalMessage->html_content);
-        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gms@example.com');
+        Mail::assertSent(ManagedEmailMailable::class, fn ($mail) => $mail->senderEmail === 'gms@example.com' && $mail->senderName === 'GMS Stone');
         Mail::assertSent(ManagedEmailMailable::class, 2);
     }
 }

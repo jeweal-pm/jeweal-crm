@@ -120,6 +120,7 @@ class EmailManagementController extends Controller
         }
         $template = EmailTemplate::findOrFail($id);
         $senderEmail = $senders->resolve($request->validated('enquiry_type'), $template->sender_email);
+        $senderName = $senders->resolveName($request->validated('enquiry_type'), $template->sender_name);
         $rendered = $renderer->render($template, [
             'first_name' => 'Test', 'last_name' => 'Recipient', 'email' => $request->validated('email'),
             'enquiry_number' => 'TEST-001', 'unsubscribe_url' => url('/unsubscribe/test-token'),
@@ -128,7 +129,7 @@ class EmailManagementController extends Controller
             'company' => 'Test Company', 'phone' => '+66 00 000 0000', 'business_type' => 'Retail',
             'stores' => 3, 'interests' => 'POS, Inventory',
         ]);
-        Mail::to($request->validated('email'))->send(new ManagedEmailMailable($rendered['html_content'], $rendered['plain_text_content'], '[TEST] '.$rendered['subject'], $senderEmail, $template->sender_name, $template->reply_to_email));
+        Mail::to($request->validated('email'))->send(new ManagedEmailMailable($rendered['html_content'], $rendered['plain_text_content'], '[TEST] '.$rendered['subject'], $senderEmail, $senderName, $template->reply_to_email));
 
         return redirect()->back()->with('status', 'Test email sent.');
     }

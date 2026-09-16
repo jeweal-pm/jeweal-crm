@@ -16,6 +16,11 @@ return [
         'gis' => env('MAIL_FROM_ADDRESS_GIS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
         'gms' => env('MAIL_FROM_ADDRESS_GMS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
     ],
+    'sender_names' => [
+        'general' => env('MAIL_FROM_NAME_GENERAL', 'Jeweal'),
+        'gis' => env('MAIL_FROM_NAME_GIS', 'GIS247'),
+        'gms' => env('MAIL_FROM_NAME_GMS', 'GMS Stone'),
+    ],
     'brevo' => [
         'api_key' => env('BREVO_API_KEY'),
         'webhook_secret' => env('BREVO_WEBHOOK_SECRET'),
