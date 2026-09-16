@@ -38,6 +38,66 @@ class EmailSequenceTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_manual_enrollment_sends_the_due_first_step_immediately(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-07-23 12:00:00'));
+        config([
+            'email_management.quiet_hours_start' => '21:00',
+            'email_management.quiet_hours_end' => '08:00',
+            'email_management.marketing_daily_limit' => 100,
+            'email_management.marketing_weekly_limit' => 100,
+        ]);
+        Mail::fake();
+
+        $user = $this->rootUser();
+        $template = EmailTemplate::create([
+            'name' => 'Immediate sequence step',
+            'code' => 'immediate-sequence-step',
+            'email_type' => 'marketing',
+            'category' => 'follow_up',
+            'subject' => 'Immediate follow up',
+            'html_content' => '<p>Hello {{first_name}}</p>',
+            'status' => 'published',
+        ]);
+        $sequence = EmailSequenceTemplate::create([
+            'name' => 'Immediate sequence',
+            'code' => 'immediate-sequence',
+            'status' => 'published',
+        ]);
+        EmailSequenceStep::create([
+            'email_sequence_template_id' => $sequence->id,
+            'step_number' => 1,
+            'email_template_id' => $template->id,
+            'delay_value' => 0,
+            'delay_unit' => 'minutes',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('email.enrollments.store'), [
+                'email' => 'immediate@example.com',
+                'email_sequence_template_id' => $sequence->id,
+            ])
+            ->assertRedirect(route('email.enrollments'));
+
+        $enrollment = EmailEnrollment::where('email_sequence_template_id', $sequence->id)->firstOrFail();
+        $this->assertSame('subscribed', $enrollment->subscriber->subscription_status);
+        $this->assertSame('published', $enrollment->sequence->status);
+        $this->assertTrue($enrollment->subscriber->canReceiveMarketing('follow_up'));
+        $this->assertSame('completed', $enrollment->status);
+        $this->assertDatabaseHas('email_messages', [
+            'email_enrollment_id' => $enrollment->id,
+            'to_email' => 'immediate@example.com',
+            'status' => 'sent',
+        ]);
+        $this->assertDatabaseHas('email_enrollments', [
+            'id' => $enrollment->id,
+            'status' => 'completed',
+            'current_step' => 2,
+        ]);
+
+        Carbon::setTestNow();
+    }
+
     public function test_sequence_prevents_duplicate_enrollment_for_same_subscriber(): void
     {
         $subscriber = EmailSubscriber::create(['email' => 'duplicate-sequence@example.com', 'subscription_status' => 'subscribed', 'unsubscribe_token_hash' => hash('sha256', 'duplicate-sequence')]);

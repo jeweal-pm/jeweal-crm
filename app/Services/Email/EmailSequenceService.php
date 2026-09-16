@@ -1,0 +1,115 @@
+<?php
+
+namespace App\Services\Email;
+
+use App\Models\EmailEnrollment;
+use Illuminate\Support\Carbon;
+
+class EmailSequenceService
+{
+    public function __construct(private EmailMessageService $messages)
+    {
+    }
+
+    public function processDue(): int
+    {
+        $processed = 0;
+
+        EmailEnrollment::query()
+            ->with(['subscriber', 'sequence.steps.template'])
+            ->where('status', 'active')
+            ->whereNotNull('next_scheduled_at')
+            ->where('next_scheduled_at', '<=', now())
+            ->whereHas('sequence', fn ($query) => $query->where('status', 'published'))
+            ->chunkById(100, function ($enrollments) use (&$processed) {
+                foreach ($enrollments as $enrollment) {
+                    $processed += $this->processEnrollment($enrollment) ? 1 : 0;
+                }
+            });
+
+        return $processed;
+    }
+
+    public function processEnrollment(EmailEnrollment $enrollment): bool
+    {
+        $enrollment->loadMissing(['subscriber', 'sequence.steps.template']);
+
+        if (
+            $enrollment->status !== 'active'
+            || ! $enrollment->next_scheduled_at
+            || $enrollment->next_scheduled_at->isFuture()
+            || $enrollment->sequence?->status !== 'published'
+        ) {
+            return false;
+        }
+
+        $step = $enrollment->sequence->steps->firstWhere('step_number', $enrollment->current_step);
+        $subscriber = $enrollment->subscriber;
+
+        if (! $step || ! $step->template) {
+            $enrollment->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+                'exit_reason' => 'sequence_complete',
+            ]);
+
+            return false;
+        }
+
+        if (! $subscriber || ! $subscriber->canReceiveMarketing($step->template->category)) {
+            $enrollment->update([
+                'status' => 'suppressed',
+                'completed_at' => now(),
+                'exit_reason' => 'suppressed',
+            ]);
+
+            return false;
+        }
+
+        $message = $this->messages->queue(
+            $subscriber,
+            $step->template,
+            [
+                'first_name' => $subscriber->first_name,
+                'last_name' => $subscriber->last_name,
+                'email' => $subscriber->email,
+                'company_name' => $subscriber->company_name,
+                'enquiry_number' => strtoupper((string) $subscriber->source_type).'-'.$subscriber->source_id,
+                'enquiry_type' => $subscriber->source_type,
+                'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
+                'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
+            ],
+            'marketing',
+            [],
+            'enrollment:'.$enrollment->id.':step:'.$step->step_number,
+            null,
+            ['enrollment_id' => $enrollment->id, 'step_id' => $step->id]
+        );
+
+        if (! in_array($message->status, ['queued', 'processing', 'sent', 'delivered'], true)) {
+            return false;
+        }
+
+        $next = $enrollment->sequence->steps->firstWhere('step_number', $step->step_number + 1);
+        $enrollment->update([
+            'current_step' => $step->step_number + 1,
+            'last_email_sent_at' => now(),
+            'next_scheduled_at' => $next ? $this->nextAt($next) : null,
+            'status' => $next ? 'active' : 'completed',
+            'completed_at' => $next ? null : now(),
+        ]);
+
+        return true;
+    }
+
+    private function nextAt($step): Carbon
+    {
+        $seconds = match ($step->delay_unit) {
+            'hours' => $step->delay_value * 3600,
+            'days' => $step->delay_value * 86400,
+            default => $step->delay_value * 60,
+        };
+
+        return now()->addSeconds($seconds);
+    }
+}

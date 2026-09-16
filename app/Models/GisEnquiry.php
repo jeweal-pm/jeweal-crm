@@ -21,6 +21,8 @@ class GisEnquiry extends Model implements EnquirableContract
         'phone_number',
         'inquiry',
         'message',
+        'privacy_policy_accepted',
+        'marketing_consent',
     ];
 
     protected $attributes = [
@@ -32,6 +34,8 @@ class GisEnquiry extends Model implements EnquirableContract
     protected $casts = [
         'assigned_at' => 'datetime',
         'closed_at' => 'datetime',
+        'privacy_policy_accepted' => 'boolean',
+        'marketing_consent' => 'boolean',
         'counts_for_sale_kpi' => 'boolean',
         'spam_reasons' => 'array',
         'spam_checked_at' => 'datetime',

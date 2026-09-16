@@ -77,6 +77,31 @@ class EnquiryWorkflowTest extends TestCase
         ]);
     }
 
+    public function test_public_gis_enquiry_submission_stores_policy_fields(): void
+    {
+        $payload = [
+            'first_name' => 'GIS',
+            'last_name' => 'Consent Lead',
+            'email' => 'gis-consent@example.com',
+            'phone_number' => '+66812345678',
+            'inquiry' => 'request_quotation',
+            'message' => 'GIS consent test',
+            'privacy_policy_accepted' => true,
+            'marketing_consent' => true,
+        ];
+
+        $this->postJson('/api/gis-enquiry', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.privacy_policy_accepted', true)
+            ->assertJsonPath('data.marketing_consent', true);
+
+        $this->assertDatabaseHas('gis_enquiries', [
+            'email' => 'gis-consent@example.com',
+            'privacy_policy_accepted' => true,
+            'marketing_consent' => true,
+        ]);
+    }
+
     public function test_sale_filter_only_returns_assigned_enquiries(): void
     {
         $this->seed(RolePermissionSeeder::class);

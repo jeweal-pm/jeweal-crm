@@ -19,6 +19,7 @@ use App\Models\EmailSubscriber;
 use App\Models\EmailTemplate;
 use App\Services\Email\EmailCampaignService;
 use App\Services\Email\EmailSegmentService;
+use App\Services\Email\EmailSequenceService;
 use App\Services\Email\EmailSenderResolver;
 use App\Services\Email\EmailTemplateRenderer;
 use Illuminate\Http\Request;
@@ -351,12 +352,19 @@ class EmailManagementController extends Controller
         return view('administrator.email.enrollments.index', ['enrollments' => EmailEnrollment::with(['subscriber', 'sequence'])->latest()->paginate(25), 'sequences' => EmailSequenceTemplate::where('status', 'published')->get()]);
     }
 
-    public function enroll(Request $request)
+    public function enroll(Request $request, EmailSequenceService $sequences)
     {
         abort_unless($request->user()->hasCrmPermission('email.sequence.manage'), 403);
         $data = $request->validate(['email' => ['required', 'email'], 'email_sequence_template_id' => ['required', 'exists:email_sequence_templates,id']]);
         $subscriber = EmailSubscriber::firstOrCreate(['email' => strtolower($data['email'])], ['unsubscribe_token_hash' => hash('sha256', Str::random(64)), 'subscription_status' => 'subscribed']);
-        EmailEnrollment::firstOrCreate(['email_subscriber_id' => $subscriber->id, 'email_sequence_template_id' => $data['email_sequence_template_id']], ['status' => 'active', 'enrolled_at' => now(), 'next_scheduled_at' => now()]);
+        $enrollment = EmailEnrollment::firstOrCreate(
+            ['email_subscriber_id' => $subscriber->id, 'email_sequence_template_id' => $data['email_sequence_template_id']],
+            ['current_step' => 1, 'status' => 'active', 'enrolled_at' => now(), 'next_scheduled_at' => now()]
+        );
+
+        if ($enrollment->wasRecentlyCreated) {
+            $sequences->processEnrollment($enrollment);
+        }
 
         return redirect()->route('email.enrollments')->with('status', 'Subscriber enrolled.');
     }
