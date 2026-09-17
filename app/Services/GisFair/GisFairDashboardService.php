@@ -3,6 +3,7 @@
 namespace App\Services\GisFair;
 
 use App\Models\GisFairCampaign;
+use Carbon\Carbon;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
@@ -112,8 +113,8 @@ class GisFairDashboardService
             ->whereNull('campaigns.deleted_at')
             ->whereIn('leads.spam_status', ['clean', 'not_spam'])
             ->when($filters['campaign_id'] ?? null, fn (Builder $query, int $id) => $query->where('submissions.campaign_id', $id))
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('submissions.submitted_at', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('submissions.submitted_at', '<=', $date))
+            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->where('submissions.submitted_at', '>=', Carbon::parse($date)->startOfDay()))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->where('submissions.submitted_at', '<', Carbon::parse($date)->addDay()->startOfDay()))
             ->when($filters['source'] ?? null, fn (Builder $query, string $source) => $query->whereRaw(self::SOURCE_EXPRESSION.' = ?', [$source]))
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('leads.status', $status))
             ->when(($filters['marketing_consent'] ?? null) === 'yes', fn (Builder $query) => $query->where('leads.marketing_consent', true))

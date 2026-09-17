@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkDeleteEnquiryRequest;
 use App\Http\Requests\EnquiryFilterRequest;
@@ -367,8 +368,8 @@ class GisEnquiriesController extends Controller
         $query
             ->when($validated['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($validated['assigned_to'] ?? null, fn (Builder $query, int $userId) => $query->where('assigned_to', $userId))
-            ->when($validated['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '>=', $date))
-            ->when($validated['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '<=', $date))
+            ->when($validated['date_from'] ?? null, fn (Builder $query, string $date) => $query->where('created_at', '>=', Carbon::parse($date)->startOfDay()))
+            ->when($validated['date_to'] ?? null, fn (Builder $query, string $date) => $query->where('created_at', '<', Carbon::parse($date)->addDay()->startOfDay()))
             ->when($validated['q'] ?? null, function (Builder $query, string $keyword) {
                 $query->where(function (Builder $query) use ($keyword) {
                     $query->where('first_name', 'like', "%{$keyword}%")
