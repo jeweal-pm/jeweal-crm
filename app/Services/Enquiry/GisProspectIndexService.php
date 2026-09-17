@@ -6,6 +6,7 @@ use App\Models\GisEnquiry;
 use App\Models\GisFairLead;
 use App\Models\User;
 use App\Services\Spam\EnquirySpamScorer;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -112,8 +113,8 @@ class GisProspectIndexService
             ->where($table.'.spam_status', $spamStatus)
             ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where($table.'.status', $status))
             ->when($filters['assigned_to'] ?? null, fn (Builder $query, int $userId) => $query->where($table.'.assigned_to', $userId))
-            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate($table.'.created_at', '>=', $date))
-            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate($table.'.created_at', '<=', $date));
+            ->when($filters['date_from'] ?? null, fn (Builder $query, string $date) => $query->where($table.'.created_at', '>=', Carbon::parse($date)->startOfDay()))
+            ->when($filters['date_to'] ?? null, fn (Builder $query, string $date) => $query->where($table.'.created_at', '<', Carbon::parse($date)->addDay()->startOfDay()));
 
         return $query->when($filters['q'] ?? null, function (Builder $query, string $keyword) use ($isFair, $table) {
             $query->where(function (Builder $query) use ($keyword, $isFair, $table) {

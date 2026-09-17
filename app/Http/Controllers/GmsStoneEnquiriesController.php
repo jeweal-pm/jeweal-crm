@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Http\Requests\AssignEnquiryRequest;
 use App\Http\Requests\BulkEnquiryActionRequest;
 use App\Http\Requests\GmsStoneEnquiryFilterRequest;
@@ -293,8 +294,8 @@ class GmsStoneEnquiriesController extends Controller
             ->when(array_key_exists('is_seen', $validated) && $validated['is_seen'] !== null, fn (Builder $query) => $query->where('is_seen', (bool) $validated['is_seen']))
             ->when(array_key_exists('is_approved', $validated) && $validated['is_approved'] !== null, fn (Builder $query) => $query->where('is_approved', (bool) $validated['is_approved']))
             ->when($validated['assigned_to'] ?? null, fn (Builder $query, int $userId) => $query->where('assigned_to', $userId))
-            ->when($validated['date_from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '>=', $date))
-            ->when($validated['date_to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('created_at', '<=', $date))
+            ->when($validated['date_from'] ?? null, fn (Builder $query, string $date) => $query->where('created_at', '>=', Carbon::parse($date)->startOfDay()))
+            ->when($validated['date_to'] ?? null, fn (Builder $query, string $date) => $query->where('created_at', '<', Carbon::parse($date)->addDay()->startOfDay()))
             ->when($validated['q'] ?? null, function (Builder $query, string $keyword) {
                 $query->where(function (Builder $query) use ($keyword) {
                     $query->where('full_name', 'like', "%{$keyword}%")
