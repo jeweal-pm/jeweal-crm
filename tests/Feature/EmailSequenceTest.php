@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\ManagedEmailMailable;
 use App\Models\EmailEnrollment;
 use App\Models\EmailMessage;
 use App\Models\EmailSequenceStep;
@@ -144,7 +145,7 @@ class EmailSequenceTest extends TestCase
             'next_scheduled_at' => now(),
         ]);
 
-        app(\App\Services\Email\EmailSequenceService::class)->processEnrollment($enrollment);
+        $this->assertTrue(app(\App\Services\Email\EmailSequenceService::class)->processEnrollment($enrollment));
 
         $this->assertDatabaseHas('email_messages', [
             'email_enrollment_id' => $enrollment->id,
@@ -285,6 +286,91 @@ class EmailSequenceTest extends TestCase
 
         $this->actingAs($user)->delete(route('email.sequences.steps.destroy', [$sequence->id, $step->id]))->assertRedirect(route('email.sequences.show', $sequence->id));
         $this->assertDatabaseMissing('email_sequence_steps', ['id' => $step->id]);
+    }
+
+    public function test_root_can_import_a_custom_sequence_without_email_templates(): void
+    {
+        $user = $this->rootUser();
+
+        $response = $this->actingAs($user)->post(route('email.sequences.import.store'), [
+            'payload' => json_encode([
+                'schema_version' => 1,
+                'sequence' => [
+                    'name' => 'Imported GIS journey',
+                    'code' => 'imported-gis-journey',
+                    'description' => 'Custom content sequence',
+                    'timezone' => 'Asia/Bangkok',
+                ],
+                'steps' => [[
+                    'step_number' => 1,
+                    'delay_value' => 0,
+                    'delay_unit' => 'minutes',
+                    'subject' => 'Hello {{first_name}}',
+                    'preview_text' => 'A useful follow-up',
+                    'html_content' => '<p>Hello {{first_name}}</p><script>alert(1)</script><p><a href="https://gis247.net/">Explore GIS247</a></p>',
+                    'plain_text_content' => 'Hello {{first_name}}',
+                ]],
+            ]),
+        ]);
+
+        $sequence = EmailSequenceTemplate::where('code', 'imported-gis-journey')->firstOrFail();
+        $step = EmailSequenceStep::where('email_sequence_template_id', $sequence->id)->firstOrFail();
+
+        $response->assertRedirect(route('email.sequences.show', $sequence->id));
+        $this->assertSame('draft', $sequence->status);
+        $this->assertSame('custom', $step->content_mode);
+        $this->assertNull($step->email_template_id);
+        $this->assertStringNotContainsString('<script>', $step->html_content);
+    }
+
+    public function test_custom_sequence_step_can_send_without_an_email_template(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-07-23 12:00:00'));
+        config([
+            'email_management.quiet_hours_start' => '21:00',
+            'email_management.quiet_hours_end' => '08:00',
+            'email_management.marketing_daily_limit' => 100,
+            'email_management.marketing_weekly_limit' => 100,
+        ]);
+        Mail::fake();
+
+        $sequence = EmailSequenceTemplate::create(['name' => 'Custom sequence', 'code' => 'custom-sequence', 'status' => 'published']);
+        EmailSequenceStep::create([
+            'email_sequence_template_id' => $sequence->id,
+            'step_number' => 1,
+            'content_mode' => 'custom',
+            'subject' => 'A custom hello for {{first_name}}',
+            'html_content' => '<p>Hello {{first_name}}</p><p><a href="https://gis247.net/">Explore GIS247</a></p>',
+            'plain_text_content' => 'Hello {{first_name}}',
+            'delay_value' => 0,
+            'delay_unit' => 'minutes',
+        ]);
+        $subscriber = EmailSubscriber::create([
+            'email' => 'custom-sequence@example.com',
+            'first_name' => 'Custom',
+            'subscription_status' => 'subscribed',
+            'unsubscribe_token_hash' => hash('sha256', 'custom-sequence'),
+        ]);
+        $enrollment = EmailEnrollment::create([
+            'email_subscriber_id' => $subscriber->id,
+            'email_sequence_template_id' => $sequence->id,
+            'status' => 'active',
+            'enrolled_at' => now(),
+            'next_scheduled_at' => now(),
+        ]);
+
+        $this->assertSame('custom', $enrollment->sequence->steps->first()->content_mode);
+        app(\App\Services\Email\EmailSequenceService::class)->processEnrollment($enrollment);
+
+        $this->assertDatabaseHas('email_messages', [
+            'email_enrollment_id' => $enrollment->id,
+            'email_template_id' => null,
+            'subject' => 'A custom hello for Custom',
+            'status' => 'sent',
+        ]);
+        Mail::assertSent(ManagedEmailMailable::class, 1);
+
+        Carbon::setTestNow();
     }
 
     public function test_paused_sequence_does_not_process_active_enrollments(): void

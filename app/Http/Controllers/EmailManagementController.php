@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\EmailAutomationConfigRequest;
 use App\Http\Requests\EmailSequenceRequest;
+use App\Http\Requests\EmailSequenceImportRequest;
 use App\Http\Requests\EmailSequenceStepRequest;
 use App\Http\Requests\EmailTemplateRequest;
 use App\Http\Requests\EmailTestSendRequest;
@@ -20,6 +21,7 @@ use App\Models\EmailTemplate;
 use App\Services\Email\EmailCampaignService;
 use App\Services\Email\EmailSegmentService;
 use App\Services\Email\EmailSequenceService;
+use App\Services\Email\EmailSequenceImportService;
 use App\Services\Email\EmailSenderResolver;
 use App\Services\Email\EmailTemplateRenderer;
 use Illuminate\Http\Request;
@@ -265,6 +267,35 @@ class EmailManagementController extends Controller
         return view('administrator.email.sequences.form');
     }
 
+    public function importSequenceForm()
+    {
+        return view('administrator.email.sequences.import');
+    }
+
+    public function importSequence(EmailSequenceImportRequest $request, EmailSequenceImportService $importer)
+    {
+        $json = $request->hasFile('json_file')
+            ? file_get_contents($request->file('json_file')->getRealPath())
+            : $request->validated('payload');
+
+        try {
+            $payload = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $exception) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'payload' => 'The uploaded content is not valid JSON: '.$exception->getMessage(),
+            ]);
+        }
+
+        if (! is_array($payload)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['payload' => 'The JSON root must be an object.']);
+        }
+
+        $sequence = $importer->import($payload, $request->user());
+        $this->audit('sequence.imported', $sequence, $request);
+
+        return redirect()->route('email.sequences.show', $sequence->id)->with('status', 'Sequence imported as a draft. Review the custom content before publishing.');
+    }
+
     public function storeSequence(EmailSequenceRequest $request)
     {
         $sequence = EmailSequenceTemplate::create(array_merge($request->validated(), [
@@ -311,6 +342,7 @@ class EmailManagementController extends Controller
             return redirect()->back()->withErrors(['step_number' => 'This step number already exists.'])->withInput();
         }
 
+        $data = $this->prepareSequenceStepData($data);
         $step = $sequence->steps()->create($data);
         $this->audit('sequence.step.created', $step, $request);
 
@@ -323,6 +355,7 @@ class EmailManagementController extends Controller
         $step = $sequence->steps()->findOrFail($stepId);
         $data = $request->validated();
         $data['step_number'] = $step->step_number;
+        $data = $this->prepareSequenceStepData($data);
         $step->update($data);
         $this->audit('sequence.step.updated', $step, $request);
 
@@ -395,5 +428,29 @@ class EmailManagementController extends Controller
     private function audit(string $action, $model, Request $request): void
     {
         EmailAuditLog::create(['user_id' => $request->user()->id, 'action' => $action, 'auditable_type' => get_class($model), 'auditable_id' => $model->getKey(), 'ip_hash' => hash('sha256', (string) $request->ip())]);
+    }
+
+    private function prepareSequenceStepData(array $data): array
+    {
+        if (($data['content_mode'] ?? 'template') === 'custom') {
+            $data['email_template_id'] = null;
+            $data['html_content'] = app(EmailTemplateRenderer::class)->sanitize($data['html_content']);
+            $data['variables'] = $data['variables'] ?? $this->variablesIn($data['subject'].' '.$data['html_content']);
+
+            return $data;
+        }
+
+        foreach (['subject', 'preview_text', 'html_content', 'plain_text_content', 'variables'] as $field) {
+            $data[$field] = null;
+        }
+
+        return $data;
+    }
+
+    private function variablesIn(string $content): array
+    {
+        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $content, $matches);
+
+        return array_values(array_unique($matches[1] ?? []));
     }
 }

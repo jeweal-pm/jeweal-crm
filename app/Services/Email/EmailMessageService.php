@@ -16,7 +16,7 @@ class EmailMessageService
 
     public function queue(
         EmailSubscriber $subscriber,
-        EmailTemplate $template,
+        ?EmailTemplate $template,
         array $data,
         string $messageType = 'marketing',
         array $recipients = [],
@@ -26,7 +26,9 @@ class EmailMessageService
         array $overrides = [],
         bool $respectSubscriberFrequencyLimits = true
     ): EmailMessage {
-        if ($messageType === 'marketing' && ! $subscriber->canReceiveMarketing($template->category)) {
+        $category = $template?->category ?: ($overrides['category'] ?? 'follow_up');
+
+        if ($messageType === 'marketing' && ! $subscriber->canReceiveMarketing($category)) {
             return new EmailMessage(['status' => 'suppressed']);
         }
 
@@ -34,13 +36,20 @@ class EmailMessageService
             return new EmailMessage(['status' => 'deferred']);
         }
 
-        $rendered = $this->renderer->render($template, $data);
+        $rendered = $template
+            ? $this->renderer->render($template, $data)
+            : $this->renderer->renderCustom(
+                (string) ($overrides['subject'] ?? ''),
+                (string) ($overrides['html_content'] ?? ''),
+                $overrides['plain_text_content'] ?? null,
+                $data
+            );
         $messageId = (string) Str::uuid();
-        $key = $idempotencyKey ?: hash('sha256', implode('|', [$subscriber->id, $template->id, $messageType, now()->format('Y-m-d-H-i')]));
+        $key = $idempotencyKey ?: hash('sha256', implode('|', [$subscriber->id, $template?->id ?: 'custom', $messageType, now()->format('Y-m-d-H-i')]));
         $message = EmailMessage::firstOrCreate(['idempotency_key' => $key], [
             'message_id' => $messageId,
             'email_subscriber_id' => $subscriber->id,
-            'email_template_id' => $template->id,
+            'email_template_id' => $template?->id,
             'email_campaign_id' => $relations['campaign_id'] ?? null,
             'email_enrollment_id' => $relations['enrollment_id'] ?? null,
             'email_sequence_step_id' => $relations['step_id'] ?? null,
@@ -51,7 +60,7 @@ class EmailMessageService
             'bcc' => array_values($recipients['bcc'] ?? []),
             'subject' => $overrides['subject'] ?? $rendered['subject'],
             'html_content' => $this->withTracking($overrides['html_content'] ?? $rendered['html_content'], $messageId, $subscriber),
-            'plain_text_content' => $rendered['plain_text_content'],
+            'plain_text_content' => $overrides['plain_text_content'] ?? $rendered['plain_text_content'],
             'status' => 'queued',
             'queued_at' => now(),
         ]);

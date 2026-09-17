@@ -47,7 +47,7 @@
                 </div>
                 <div class="email-panel-body">
                     <div class="email-nav-grid">
-                        @foreach([['email.templates','fa-file-alt','Templates','Create and version email content'],['email.config','fa-sliders-h','Automation config','Route enquiry notifications'],['email.segments','fa-users','Segments','Build reusable audiences'],['email.campaigns','fa-paper-plane','Campaigns','Approve and send broadcasts'],['email.sequences','fa-stream','Sequences','Manage timed journeys'],['email.enrollments','fa-user-plus','Enrollments','Review sequence members'],['email.logs','fa-list','Delivery logs','Inspect provider events']] as [$route,$icon,$label,$description])
+                        @foreach([['email.templates','fa-file-alt','Templates','Create and version email content'],['email.config','fa-sliders-h','Automation config','Route enquiry notifications'],['email.segments','fa-users','Segments','Build reusable audiences'],['email.campaigns','fa-paper-plane','Campaigns','Approve and send broadcasts'],['email.sequences','fa-stream','Sequences','Manage timed journeys'],['email.sequences.import','fa-file-import','Import sequence','Load custom HTML journeys'],['email.enrollments','fa-user-plus','Enrollments','Review sequence members'],['email.logs','fa-list','Delivery logs','Inspect provider events']] as [$route,$icon,$label,$description])
                             <a class="email-nav-item" href="{{ route($route) }}">
                                 <i class="fas {{ $icon }}"></i>
                                 <span><strong>{{ $label }}</strong><small class="d-block crm-muted">{{ $description }}</small></span>

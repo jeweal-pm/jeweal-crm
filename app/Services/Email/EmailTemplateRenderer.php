@@ -15,26 +15,41 @@ class EmailTemplateRenderer
 
     public function render(EmailTemplate $template, array $data): array
     {
+        return $this->renderContent($template->subject, $template->html_content, $template->plain_text_content, $data);
+    }
+
+    public function renderCustom(string $subject, string $htmlContent, ?string $plainTextContent, array $data): array
+    {
+        return $this->renderContent($subject, $htmlContent, $plainTextContent, $data);
+    }
+
+    public function renderContent(string $subject, string $htmlContent, ?string $plainTextContent, array $data): array
+    {
         $values = [];
         foreach (self::VARIABLES as $variable) {
             $values[$variable] = $this->stringify($data[$variable] ?? '');
         }
 
-        $subject = $this->replace($template->subject, $values, false);
-        $html = $this->replace($template->html_content, $values);
-        $plain = $this->replace($template->plain_text_content ?: strip_tags($template->html_content), $values, false);
+        $renderedSubject = $this->replace($subject, $values, false);
+        $html = $this->replace($htmlContent, $values);
+        $plain = $this->replace($plainTextContent ?: strip_tags($htmlContent), $values, false);
 
         return [
-            'subject' => $subject,
+            'subject' => $renderedSubject,
             'html_content' => $this->formatHtml($this->sanitize($html)),
             'plain_text_content' => trim(strip_tags($plain)),
-            'missing_variables' => $this->missing($template, $data),
+            'missing_variables' => $this->missingContent($subject, $htmlContent, $data),
         ];
     }
 
     public function unknownVariables(EmailTemplate $template): array
     {
-        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $template->subject.' '.$template->html_content, $matches);
+        return $this->unknownVariablesInContent($template->subject, $template->html_content);
+    }
+
+    public function unknownVariablesInContent(string $subject, string $htmlContent): array
+    {
+        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $subject.' '.$htmlContent, $matches);
 
         return array_values(array_diff(array_unique($matches[1]), self::VARIABLES));
     }
@@ -93,9 +108,9 @@ class EmailTemplateRenderer
         }, (string) $content);
     }
 
-    private function missing(EmailTemplate $template, array $data): array
+    private function missingContent(string $subject, string $htmlContent, array $data): array
     {
-        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $template->subject.' '.$template->html_content, $matches);
+        preg_match_all('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', $subject.' '.$htmlContent, $matches);
 
         return array_values(array_unique(array_filter($matches[1], fn (string $name) => ! array_key_exists($name, $data))));
     }

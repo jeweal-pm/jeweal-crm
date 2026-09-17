@@ -105,6 +105,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/sequences', [EmailManagementController::class, 'sequences'])->middleware('permission:email.view')->name('sequences');
         Route::get('/sequences/create', [EmailManagementController::class, 'createSequence'])->middleware('permission:email.sequence.manage')->name('sequences.create');
         Route::post('/sequences', [EmailManagementController::class, 'storeSequence'])->middleware('permission:email.sequence.manage')->name('sequences.store');
+        Route::get('/sequences/import', [EmailManagementController::class, 'importSequenceForm'])->middleware('permission:email.sequence.manage')->name('sequences.import');
+        Route::post('/sequences/import', [EmailManagementController::class, 'importSequence'])->middleware('permission:email.sequence.manage')->name('sequences.import.store');
         Route::get('/sequences/{id}', [EmailManagementController::class, 'showSequence'])->middleware('permission:email.view')->name('sequences.show');
         Route::put('/sequences/{id}', [EmailManagementController::class, 'updateSequence'])->middleware('permission:email.sequence.manage')->name('sequences.update');
         Route::post('/sequences/{id}/steps', [EmailManagementController::class, 'storeSequenceStep'])->middleware('permission:email.sequence.manage')->name('sequences.steps.store');
