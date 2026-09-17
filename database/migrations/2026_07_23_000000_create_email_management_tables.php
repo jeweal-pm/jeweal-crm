@@ -147,7 +147,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('email_sequence_template_id')->constrained('email_sequence_templates')->cascadeOnDelete();
             $table->unsignedInteger('step_number');
-            $table->foreignId('email_template_id')->constrained('email_templates')->restrictOnDelete();
+            $table->foreignId('email_template_id')->nullable()->constrained('email_templates')->restrictOnDelete();
             $table->unsignedInteger('delay_value')->default(0);
             $table->string('delay_unit', 16)->default('minutes');
             $table->string('timezone', 64)->default('Asia/Bangkok');

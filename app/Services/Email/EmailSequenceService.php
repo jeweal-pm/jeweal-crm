@@ -46,10 +46,11 @@ class EmailSequenceService
             return false;
         }
 
-        $step = $enrollment->sequence->steps->firstWhere('step_number', $enrollment->current_step);
+        $currentStep = $enrollment->current_step ?: 1;
+        $step = $enrollment->sequence->steps->firstWhere('step_number', $currentStep);
         $subscriber = $enrollment->subscriber;
 
-        if (! $step || ! $step->template) {
+        if (! $step || ($step->content_mode !== 'custom' && ! $step->template)) {
             $enrollment->update([
                 'status' => 'completed',
                 'completed_at' => now(),
@@ -59,7 +60,9 @@ class EmailSequenceService
             return false;
         }
 
-        if (! $subscriber || ! $subscriber->canReceiveMarketing($step->template->category)) {
+        $category = $step->template?->category ?: 'follow_up';
+
+        if (! $subscriber || ! $subscriber->canReceiveMarketing($category)) {
             $enrollment->update([
                 'status' => 'suppressed',
                 'completed_at' => now(),
@@ -79,11 +82,13 @@ class EmailSequenceService
             'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
             'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
         ];
-        $rendered = $this->renderer->render($step->template, $data);
+        $rendered = $step->content_mode === 'custom'
+            ? $this->renderer->renderCustom($step->subject, $step->html_content, $step->plain_text_content, $data)
+            : $this->renderer->render($step->template, $data);
         $html = $this->branding->wrap(
             $rendered['html_content'],
             $subscriber->source_type,
-            $step->template->name.' '.$step->template->code.' '.$enrollment->sequence->name.' '.$enrollment->sequence->code
+            ($step->template?->name ?: 'custom content').' '.($step->template?->code ?: '').' '.$enrollment->sequence->name.' '.$enrollment->sequence->code
         );
 
         $message = $this->messages->queue(
@@ -95,7 +100,12 @@ class EmailSequenceService
             'enrollment:'.$enrollment->id.':step:'.$step->step_number,
             null,
             ['enrollment_id' => $enrollment->id, 'step_id' => $step->id],
-            ['html_content' => $html],
+            [
+                'subject' => $rendered['subject'],
+                'html_content' => $html,
+                'plain_text_content' => $rendered['plain_text_content'],
+                'category' => $category,
+            ],
             false
         );
 

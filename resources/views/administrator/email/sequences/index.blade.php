@@ -10,7 +10,7 @@
 <div class="email-workspace">
     <section class="crm-page">
         <div class="container-fluid">
-            <div class="crm-topbar"><div class="crm-title"><h2>Email Sequences</h2><div class="crm-subtitle">Manage reusable follow-up journeys, their sending steps and lifecycle.</div></div><div class="crm-topbar-actions"><a class="btn btn-outline-secondary" href="{{ route('email.enrollments') }}"><i class="fas fa-user-plus"></i> Enrollments</a><a class="btn btn-primary" href="{{ route('email.sequences.create') }}"><i class="fas fa-plus"></i> New sequence</a></div></div>
+            <div class="crm-topbar"><div class="crm-title"><h2>Email Sequences</h2><div class="crm-subtitle">Manage reusable follow-up journeys, their sending steps and lifecycle.</div></div><div class="crm-topbar-actions"><a class="btn btn-outline-secondary" href="{{ route('email.enrollments') }}"><i class="fas fa-user-plus"></i> Enrollments</a><a class="btn btn-outline-primary" href="{{ route('email.sequences.import') }}"><i class="fas fa-file-import"></i> Import custom sequence</a><a class="btn btn-primary" href="{{ route('email.sequences.create') }}"><i class="fas fa-plus"></i> New sequence</a></div></div>
             <section class="crm-panel">
                 <div class="email-panel-head"><div><h3 class="crm-panel-title">Sequence library</h3><div class="email-panel-copy">Open a sequence to manage its settings and individual email steps.</div></div><div class="crm-result-count">{{ number_format($sequences->total()) }} sequences</div></div>
                 <div class="email-table-wrap"><table class="table table-hover crm-table"><thead><tr><th>Name</th><th>Code</th><th>Steps</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead><tbody>
