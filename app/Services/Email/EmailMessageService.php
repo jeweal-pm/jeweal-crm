@@ -10,7 +10,11 @@ use Illuminate\Support\Str;
 
 class EmailMessageService
 {
-    public function __construct(private EmailTemplateRenderer $renderer, private EmailSubscriberService $subscribers)
+    public function __construct(
+        private EmailTemplateRenderer $renderer,
+        private EmailSubscriberService $subscribers,
+        private EmailUrlService $urls
+    )
     {
     }
 
@@ -82,10 +86,10 @@ class EmailMessageService
         }
 
         $html = preg_replace_callback('/(<a\b[^>]*href=["\'])(https?:\/\/[^"\']+)(["\'])/i', function (array $match) use ($messageId) {
-            return $match[1].url('/email-track/click/'.$messageId).'?url='.rawurlencode($match[2]).$match[3];
+            return $match[1].$this->urls->to('/email-track/click/'.$messageId).'?url='.rawurlencode($match[2]).$match[3];
         }, $html);
 
-        return $html.'<img src="'.e(url('/email-track/open/'.$messageId)).'" width="1" height="1" alt="" style="display:none" />';
+        return $html.'<img src="'.e($this->urls->to('/email-track/open/'.$messageId)).'" width="1" height="1" alt="" style="display:none" />';
     }
 
     private function withinFrequencyLimits(EmailSubscriber $subscriber, bool $respectSubscriberFrequencyLimits = true): bool

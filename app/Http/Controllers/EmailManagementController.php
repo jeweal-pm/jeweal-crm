@@ -24,6 +24,7 @@ use App\Services\Email\EmailSequenceService;
 use App\Services\Email\EmailSequenceImportService;
 use App\Services\Email\EmailSenderResolver;
 use App\Services\Email\EmailTemplateRenderer;
+use App\Services\Email\EmailUrlService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -98,14 +99,14 @@ class EmailManagementController extends Controller
         return redirect()->back();
     }
 
-    public function previewTemplate(Request $request, int $id, EmailTemplateRenderer $renderer)
+    public function previewTemplate(Request $request, int $id, EmailTemplateRenderer $renderer, EmailUrlService $urls)
     {
         $template = EmailTemplate::findOrFail($id);
         $rendered = $renderer->render($template, [
             'first_name' => 'Demo', 'last_name' => 'Recipient', 'email' => 'demo@example.com',
             'company_name' => 'Demo Company', 'enquiry_number' => 'DEMO-001', 'enquiry_type' => 'general',
             'submitted_at' => now()->format('Y-m-d H:i'), 'sales_owner_name' => 'Sales Team',
-            'unsubscribe_url' => url('/unsubscribe/demo-token'), 'country' => 'Thailand', 'phone' => '+66 00 000 0000',
+            'unsubscribe_url' => $urls->to('/unsubscribe/demo-token'), 'country' => 'Thailand', 'phone' => '+66 00 000 0000',
             'fair_code' => 'GIS74-DEMO01', 'event_name' => 'Bangkok Gems & Jewelry Fair',
             'event_code' => 'bgjf-74', 'event_dates' => '10-14 September 2026',
             'event_hall' => 'X', 'event_booth' => 'A00', 'business_type' => 'Retail',
@@ -115,7 +116,7 @@ class EmailManagementController extends Controller
         return view('administrator.email.templates.preview', compact('template', 'rendered'));
     }
 
-    public function testSend(EmailTestSendRequest $request, int $id, EmailTemplateRenderer $renderer, EmailSenderResolver $senders)
+    public function testSend(EmailTestSendRequest $request, int $id, EmailTemplateRenderer $renderer, EmailSenderResolver $senders, EmailUrlService $urls)
     {
         if (app()->environment('testing') === false && config('app.env') !== 'production' && config('email_management.test_allowlist') && ! in_array($request->validated('email'), config('email_management.test_allowlist'), true)) {
             abort(422, 'Test recipient is not on the allowlist.');
@@ -125,7 +126,7 @@ class EmailManagementController extends Controller
         $senderName = $senders->resolveName($request->validated('enquiry_type'), $template->sender_name);
         $rendered = $renderer->render($template, [
             'first_name' => 'Test', 'last_name' => 'Recipient', 'email' => $request->validated('email'),
-            'enquiry_number' => 'TEST-001', 'unsubscribe_url' => url('/unsubscribe/test-token'),
+            'enquiry_number' => 'TEST-001', 'unsubscribe_url' => $urls->to('/unsubscribe/test-token'),
             'fair_code' => 'GIS74-TEST01', 'event_name' => 'Bangkok Gems & Jewelry Fair',
             'event_dates' => '10-14 September 2026', 'event_hall' => 'X', 'event_booth' => 'A00',
             'company' => 'Test Company', 'phone' => '+66 00 000 0000', 'business_type' => 'Retail',

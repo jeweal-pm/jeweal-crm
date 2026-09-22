@@ -2,6 +2,7 @@
 
 return [
     'timezone' => env('EMAIL_TIMEZONE', 'Asia/Bangkok'),
+    'public_url' => env('EMAIL_PUBLIC_URL', env('APP_URL', 'http://localhost')),
     'tracking_enabled' => (bool) env('EMAIL_TRACKING_ENABLED', true),
     'marketing_daily_limit' => (int) env('EMAIL_MARKETING_DAILY_LIMIT', 1),
     'marketing_weekly_limit' => (int) env('EMAIL_MARKETING_WEEKLY_LIMIT', 3),
