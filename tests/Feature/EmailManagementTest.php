@@ -44,6 +44,7 @@ class EmailManagementTest extends TestCase
 
     public function test_message_is_idempotent_and_tracking_urls_are_added(): void
     {
+        config(['email_management.public_url' => 'https://jeweal-crm.store']);
         $template = EmailTemplate::create([
             'name' => 'Test', 'code' => 'tracking-template', 'email_type' => 'transactional', 'category' => 'welcome',
             'subject' => 'Hello', 'html_content' => '<a href="https://example.com">Open</a>', 'status' => 'published',
@@ -59,6 +60,8 @@ class EmailManagementTest extends TestCase
 
         $this->assertSame($first->id, $second->id);
         $this->assertDatabaseCount('email_messages', 1);
+        $this->assertStringContainsString('https://jeweal-crm.store/email-track/click/', $first->html_content);
+        $this->assertStringNotContainsString('http://localhost/email-track/', $first->html_content);
     }
 
     public function test_unsubscribe_link_changes_subscription_and_suppresses_marketing(): void

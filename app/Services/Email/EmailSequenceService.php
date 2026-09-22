@@ -10,7 +10,8 @@ class EmailSequenceService
     public function __construct(
         private EmailMessageService $messages,
         private EmailTemplateRenderer $renderer,
-        private EmailBrandingService $branding
+        private EmailBrandingService $branding,
+        private EmailUrlService $urls
     ) {
     }
 
@@ -80,7 +81,7 @@ class EmailSequenceService
             'enquiry_number' => strtoupper((string) $subscriber->source_type).'-'.$subscriber->source_id,
             'enquiry_type' => $subscriber->source_type,
             'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
-            'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
+            'unsubscribe_url' => $this->urls->to('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
         ];
         $rendered = $step->content_mode === 'custom'
             ? $this->renderer->renderCustom($step->subject, $step->html_content, $step->plain_text_content, $data)

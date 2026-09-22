@@ -7,7 +7,11 @@ use App\Models\EmailEnrollment;
 
 class EmailCampaignService
 {
-    public function __construct(private EmailSegmentService $segments, private EmailMessageService $messages)
+    public function __construct(
+        private EmailSegmentService $segments,
+        private EmailMessageService $messages,
+        private EmailUrlService $urls
+    )
     {
     }
 
@@ -47,7 +51,7 @@ class EmailCampaignService
                     'enquiry_number' => strtoupper((string) $subscriber->source_type).'-'.$subscriber->source_id,
                     'enquiry_type' => $subscriber->source_type,
                     'submitted_at' => optional($subscriber->created_at)->format('Y-m-d H:i'),
-                    'unsubscribe_url' => url('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
+                    'unsubscribe_url' => $this->urls->to('/unsubscribe/'.$subscriber->unsubscribe_token_hash),
                 ], 'marketing', [], 'campaign:'.$campaign->id.':subscriber:'.$subscriber->id, null, ['campaign_id' => $campaign->id], ['subject' => $variant?->subject]);
                 if (! in_array($message->status, ['suppressed', 'deferred'], true)) {
                     $count++;

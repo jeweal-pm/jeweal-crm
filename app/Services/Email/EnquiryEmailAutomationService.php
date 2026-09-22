@@ -9,7 +9,8 @@ class EnquiryEmailAutomationService
 {
     public function __construct(
         private EmailSubscriberService $subscribers,
-        private EmailMessageService $messages
+        private EmailMessageService $messages,
+        private EmailUrlService $urls
     ) {
     }
 
@@ -72,7 +73,7 @@ class EnquiryEmailAutomationService
                 'general', 'jeweal_fair' => 'Jeweal Team',
                 default => 'Our Team',
             },
-            'unsubscribe_url' => url('/unsubscribe/'.$this->subscribers->tokenFor($subscriber)),
+            'unsubscribe_url' => $this->urls->to('/unsubscribe/'.$this->subscribers->tokenFor($subscriber)),
             'country' => $enquiry->country,
             'phone' => $enquiry->phone ?? $enquiry->phone_number ?? $enquiry->phone_e164,
             'inquiry' => $enquiry->inquiry ?? '',

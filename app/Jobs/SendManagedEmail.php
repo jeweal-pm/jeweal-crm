@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\ManagedEmailMailable;
 use App\Models\EmailMessage;
+use App\Services\Email\EmailUrlService;
 use App\Services\Email\EmailSenderResolver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -66,7 +67,7 @@ class SendManagedEmail implements ShouldQueue
             );
             $mailable->withSymfonyMessage(function ($symfonyMessage) use ($message) {
                 if ($message->subscriber) {
-                    $symfonyMessage->getHeaders()->addTextHeader('List-Unsubscribe', '<'.url('/unsubscribe/'.$message->subscriber->unsubscribe_token_hash).'>');
+                    $symfonyMessage->getHeaders()->addTextHeader('List-Unsubscribe', '<'.app(EmailUrlService::class)->to('/unsubscribe/'.$message->subscriber->unsubscribe_token_hash).'>');
                     $symfonyMessage->getHeaders()->addTextHeader('List-Unsubscribe-Post', 'List-Unsubscribe=One-Click');
                 }
             });
